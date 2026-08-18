@@ -49,7 +49,6 @@ export default function LoginPage() {
       toast.success("Welcome back!", {
         description: "You have successfully logged in.",
       });
-      // Redirect to the dashboard project list
       router.push("/projects");
     },
     onError: (error: any) => {
