@@ -57,7 +57,6 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (err) {
         processQueue(err, null);
-        // Optional: Redirect to login or clear global state here
         if (typeof window !== "undefined") {
           window.location.href = "/login";
         }
