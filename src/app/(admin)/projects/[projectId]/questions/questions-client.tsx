@@ -121,17 +121,17 @@ export function QuestionsClient({ projectId, project: initialProject }: { projec
     {
       id: "field1",
       header: project?.field1Label || "Field 1",
-      cell: ({ row }) => project ? (row.original.dynamicProperties[project.field1Label] || "-") : "-",
+      cell: ({ row }) => project ? (row.original[project.field1Label] || "-") : "-",
     },
     {
       id: "field2",
       header: project?.field2Label || "Field 2",
-      cell: ({ row }) => project?.field2Label ? (row.original.dynamicProperties[project.field2Label] || "-") : "-",
+      cell: ({ row }) => project?.field2Label ? (row.original[project.field2Label] || "-") : "-",
     },
     {
       id: "field3",
       header: project?.field3Label || "Field 3",
-      cell: ({ row }) => project?.field3Label ? (row.original.dynamicProperties[project.field3Label] || "-") : "-",
+      cell: ({ row }) => project?.field3Label ? (row.original[project.field3Label] || "-") : "-",
     },
     {
       id: "actions",

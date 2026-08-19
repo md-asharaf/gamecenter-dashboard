@@ -2,7 +2,7 @@ export interface Question {
   id: string;
   createdAt: number;
   updatedAt: number;
-  dynamicProperties: Record<string, string>;
+  [key: string]: any;
 }
 
 export interface QuestionPageResponse {

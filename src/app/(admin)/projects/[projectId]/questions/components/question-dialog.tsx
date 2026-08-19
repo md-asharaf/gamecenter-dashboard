@@ -55,9 +55,9 @@ export function QuestionDialog({ open, onOpenChange, question, project }: Questi
   useEffect(() => {
     if (question && open) {
       form.reset({
-        field1: question.dynamicProperties[project.field1Label] || "",
-        field2: project.field2Label ? question.dynamicProperties[project.field2Label] || "" : "",
-        field3: project.field3Label ? question.dynamicProperties[project.field3Label] || "" : "",
+        field1: question[project.field1Label] || "",
+        field2: project.field2Label ? question[project.field2Label] || "" : "",
+        field3: project.field3Label ? question[project.field3Label] || "" : "",
       });
     } else if (!open) {
       form.reset({
