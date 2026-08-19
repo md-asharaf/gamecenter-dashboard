@@ -33,7 +33,6 @@ export function QuestionDialog({ open, onOpenChange, question, project }: Questi
   const isEditing = !!question;
   const queryClient = useQueryClient();
 
-  // Dynamically build the schema based on project labels
   const formSchema = z.object({
     field1: z.string().min(1, `${project.field1Label} is required`),
     field2: project.field2Label ? z.string().min(1, `${project.field2Label} is required`) : z.string().optional(),
@@ -69,7 +68,6 @@ export function QuestionDialog({ open, onOpenChange, question, project }: Questi
 
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      // The API expects dynamicFields with keys matching the project labels exactly
       const dynamicFields: Record<string, string> = {
         [project.field1Label]: values.field1,
       };

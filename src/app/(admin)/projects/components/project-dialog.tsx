@@ -18,6 +18,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 import { api } from "@/lib/api/axios";
 import { Project, CreateProjectRequest, UpdateProjectRequest } from "@/lib/types/project";
 
@@ -102,7 +110,7 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast.success(isEditing ? "Project updated successfully" : "Project created successfully");
+      toast.success(isEditing ? "Project updated successfully." : "Project created successfully.");
       onOpenChange(false);
     },
     onError: (error: any) => {
@@ -157,6 +165,25 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
               </div>
             )}
           </div>
+          
+          {isEditing && (
+            <div className="space-y-2">
+              <Label>Main Question Label</Label>
+              <Select 
+                onValueChange={(value) => form.setValue("mainQuestionLabel", value || "")} 
+                defaultValue={form.getValues("mainQuestionLabel") || ""}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select the main question label" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={form.watch("field1Label") || "field1"}>{form.watch("field1Label") || "Field 1"}</SelectItem>
+                  <SelectItem value={form.watch("field2Label") || "field2"}>{form.watch("field2Label") || "Field 2"}</SelectItem>
+                  <SelectItem value={form.watch("field3Label") || "field3"}>{form.watch("field3Label") || "Field 3"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="pt-4 flex justify-end space-x-2">
             <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>

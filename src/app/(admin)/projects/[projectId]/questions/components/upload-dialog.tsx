@@ -39,7 +39,6 @@ export function UploadDialog({ open, onOpenChange, projectId }: UploadDialogProp
     try {
       setIsUploading(true);
       
-      // 1. Get presigned URL
       const ext = file.name.split('.').pop()?.toLowerCase();
       if (ext !== 'csv' && ext !== 'docx') {
         toast.error("Unsupported file type. Please upload a .csv or .docx file.");
@@ -50,7 +49,6 @@ export function UploadDialog({ open, onOpenChange, projectId }: UploadDialogProp
       const res = await api.post(`/projects/${projectId}/uploads/presigned-url?ext=${ext}`);
       const { url } = res.data.data; // UploadUrlResponse
 
-      // 2. Upload file directly to S3
       await axios.put(url, file, {
         headers: {
           'Content-Type': file.type || 'application/octet-stream',

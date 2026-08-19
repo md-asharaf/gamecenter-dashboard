@@ -25,12 +25,12 @@ import { Project } from "@/lib/types/project";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const baseSchema = z.object({
-  email: z.string().email("Valid email is required"),
+  email: z.string().email("Invalid email format."),
   projectIds: z.array(z.string()).default([]),
 });
 
 const createSchema = baseSchema.extend({
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(6, "Password length must be at least 6 characters."),
 });
 
 const updateSchema = baseSchema.extend({
@@ -47,7 +47,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
   const isEditing = !!user;
   const queryClient = useQueryClient();
 
-  const { data: projectData } = useQuery<{ data: Project[] }>({
+  const { data: projectData } = useQuery<{ data: { items: Project[] } }>({
     queryKey: ["projects"],
     queryFn: async () => {
       const res = await api.get("/projects");
@@ -56,7 +56,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
     enabled: open,
   });
 
-  const projects = projectData?.data || [];
+  const projects = projectData?.data?.items || [];
 
   const form = useForm<z.infer<typeof createSchema> | z.infer<typeof updateSchema>>({
     resolver: zodResolver(isEditing ? updateSchema : createSchema) as any,
@@ -107,11 +107,11 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success(isEditing ? "Admin updated successfully" : "Admin created successfully");
+      toast.success(isEditing ? "Sub-admin updated successfully." : "Sub-admin created successfully.");
       onOpenChange(false);
     },
     onError: (error: any) => {
-      toast.error(isEditing ? "Failed to update admin" : "Failed to create admin", {
+      toast.error(isEditing ? "Failed to update sub-admin." : "Failed to create sub-admin.", {
         description: error.response?.data?.message || error.message,
       });
     },
@@ -157,7 +157,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
                   <p className="text-sm text-muted-foreground">No projects available.</p>
                 ) : (
                   <div className="space-y-3">
-                    {projects.map((project) => (
+                    {projects.map((project: Project) => (
                       <Controller
                         key={project.id}
                         control={form.control}

@@ -45,7 +45,7 @@ export default function LoginPage() {
       const response = await api.post("/auth/login", values);
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast.success("Welcome back!", {
         description: "You have successfully logged in.",
       });
