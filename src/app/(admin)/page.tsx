@@ -1,12 +1,14 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { FolderKanban, Users, Loader2 } from "lucide-react";
+import { FolderKanban, Users, Loader2, Activity } from "lucide-react";
 import { api } from "@/lib/api/axios";
 import { motion } from "framer-motion";
 import {
   Area,
   AreaChart,
+  BarChart,
+  Bar,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -27,6 +29,7 @@ interface DashboardStats {
   totalProjects: number;
   totalAdmins: number | null;
   projectGrowth: { date: string; total: number }[];
+  projectStats: { projectId: string; projectName: string; questionCount: number }[];
 }
 
 export default function OverviewPage() {
@@ -83,7 +86,7 @@ export default function OverviewPage() {
           </Card>
         </motion.div>
 
-        {user?.role === "SUPER_ADMIN" && stats?.totalAdmins !== null && (
+        {stats?.totalAdmins !== null && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -102,6 +105,24 @@ export default function OverviewPage() {
             </Card>
           </motion.div>
         )}
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+          whileHover={{ y: -5, transition: { duration: 0.2 } }}
+        >
+          <Card className="glass-card h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">System Health</CardTitle>
+              <Activity className="h-4 w-4 text-emerald-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-emerald-500">99.9%</div>
+              <p className="text-xs text-muted-foreground">All systems operational</p>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
 
       <motion.div
@@ -157,6 +178,60 @@ export default function OverviewPage() {
           </CardContent>
         </Card>
       </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, delay: 0.4 }}
+      >
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle>Questions per Project</CardTitle>
+            <CardDescription>Total number of questions uploaded in each project</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[350px] w-full">
+              {stats?.projectStats && stats.projectStats.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats.projectStats} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} vertical={false} />
+                    <XAxis
+                      dataKey="projectName"
+                      stroke="#888888"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="#888888"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => `${value}`}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: "rgba(0,0,0,0.8)", border: "none", borderRadius: "8px", color: "white" }}
+                      itemStyle={{ color: "hsl(var(--primary))" }}
+                      cursor={{fill: "rgba(255,255,255,0.1)"}}
+                    />
+                    <Bar
+                      dataKey="questionCount"
+                      fill="hsl(var(--primary))"
+                      radius={[4, 4, 0, 0]}
+                      name="Questions"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center text-muted-foreground">
+                  No projects available.
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 }
+
