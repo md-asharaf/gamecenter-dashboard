@@ -174,7 +174,7 @@ export function QuestionsClient({ projectId, project: initialProject }: { projec
         </div>
         <div className="flex w-full sm:w-auto space-x-2">
           <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => setIsUploadDialogOpen(true)}>
-            <Upload className="mr-2 h-4 w-4" /> Upload CSV
+            <Upload className="mr-2 h-4 w-4" /> Upload CSV/DOCX
           </Button>
           <Button className="flex-1 sm:flex-none" onClick={handleCreate}>
             <Plus className="mr-2 h-4 w-4" /> Add Question
