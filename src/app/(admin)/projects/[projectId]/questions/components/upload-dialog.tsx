@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Loader2, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
+import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
 
 import {
   Dialog,
@@ -21,9 +22,10 @@ interface UploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId: string;
+  onSuccess?: () => void;
 }
 
-export function UploadDialog({ open, onOpenChange, projectId }: UploadDialogProps) {
+export function UploadDialog({ open, onOpenChange, projectId, onSuccess }: UploadDialogProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -36,9 +38,11 @@ export function UploadDialog({ open, onOpenChange, projectId }: UploadDialogProp
   const handleUpload = async () => {
     if (!file) return;
 
+    let toastId: string | number | undefined;
+
     try {
       setIsUploading(true);
-      
+
       const ext = file.name.split('.').pop()?.toLowerCase();
       if (ext !== 'csv' && ext !== 'docx') {
         toast.error("Unsupported file type. Please upload a .csv or .docx file.");
@@ -47,20 +51,77 @@ export function UploadDialog({ open, onOpenChange, projectId }: UploadDialogProp
       }
 
       const res = await api.post(`/projects/${projectId}/uploads/presigned-url?ext=${ext}`);
-      const { url } = res.data.data; // UploadUrlResponse
+      const { url, key: fullS3Key } = res.data.data;
+
+      toastId = toast.loading("Uploading file... 0%");
 
       await axios.put(url, file, {
         headers: {
           'Content-Type': file.type || 'application/octet-stream',
         },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percentCompleted = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            );
+            toast.loading(`Uploading file... ${percentCompleted}%`, {
+              id: toastId,
+            });
+          }
+        },
       });
 
-      toast.success("File upload complete. Processing initiated.");
-      onOpenChange(false);
-      setFile(null);
-    } catch (error: any) {
+      toast.loading("Processing file on server...", { id: toastId });
+      
+      const fileName = fullS3Key.split('/').pop() || '';
+      
+      let isDone = false;
+      let attempts = 0;
+      let notFoundCount = 0;
+      while (!isDone && attempts < 60) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        attempts++;
+        try {
+          const statusRes = await api.get(`/projects/${projectId}/uploads/${fileName}/status`);
+          const job = statusRes.data.data;
+          notFoundCount = 0;
+
+          if (job.status === "COMPLETED") {
+            toast.success("File upload and processing complete. Questions imported.", { id: toastId });
+            isDone = true;
+            onOpenChange(false);
+            setFile(null);
+            onSuccess?.();
+          } else if (job.status === "FAILED") {
+            toast.error("Processing failed on server.", {
+              id: toastId,
+              description: job.errorMessage || "An unknown error occurred",
+            });
+            isDone = true;
+          }
+        } catch (pollError) {
+          const axiosErr = pollError as AxiosError;
+          if (axiosErr.response?.status === 404) {
+            notFoundCount++;
+            if (notFoundCount >= 5) {
+              toast.error("Upload job not found. The file may not have been received by the server.", { id: toastId });
+              isDone = true;
+            }
+          } else {
+            console.error("Polling error", pollError);
+          }
+        }
+      }
+      
+      if (!isDone) {
+        toast.error("Processing timed out.", { id: toastId });
+      }
+      
+    } catch (error) {
+      const axiosErr = error as AxiosError<ApiError>;
       toast.error("File upload failed.", {
-        description: error.response?.data?.message || error.message,
+        id: toastId,
+        description: getApiErrorMessage(axiosErr),
       });
     } finally {
       setIsUploading(false);
@@ -69,7 +130,7 @@ export function UploadDialog({ open, onOpenChange, projectId }: UploadDialogProp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto rounded-lg">
         <DialogHeader>
           <DialogTitle>Bulk Import</DialogTitle>
           <DialogDescription>

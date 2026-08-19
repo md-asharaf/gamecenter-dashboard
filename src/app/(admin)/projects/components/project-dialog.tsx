@@ -1,4 +1,6 @@
 "use client";
+import { AxiosError } from "axios";
+import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
 
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -110,12 +112,15 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      if (isEditing && project?.id) {
+        queryClient.invalidateQueries({ queryKey: ["project", project.id] });
+      }
       toast.success(isEditing ? "Project updated successfully." : "Project created successfully.");
       onOpenChange(false);
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(isEditing ? "Project update failed." : "Project creation failed.", {
-        description: error.response?.data?.message || error.message,
+        description: getApiErrorMessage(error),
       });
     },
   });
@@ -126,7 +131,7 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto rounded-lg">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Edit Project" : "Create Project"}</DialogTitle>
           <DialogDescription>
@@ -142,7 +147,7 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
             )}
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="field1Label">Field 1 Label</Label>
               <Input id="field1Label" {...form.register("field1Label")} />
@@ -179,7 +184,6 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
                 <SelectContent>
                   <SelectItem value={form.watch("field1Label") || "field1"}>{form.watch("field1Label") || "Field 1"}</SelectItem>
                   <SelectItem value={form.watch("field2Label") || "field2"}>{form.watch("field2Label") || "Field 2"}</SelectItem>
-                  <SelectItem value={form.watch("field3Label") || "field3"}>{form.watch("field3Label") || "Field 3"}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

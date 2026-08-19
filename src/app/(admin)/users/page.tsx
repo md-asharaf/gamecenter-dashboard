@@ -15,9 +15,6 @@ export default async function UsersPage() {
     },
   })
 
-  const projectsRes = await api.get('/projects').catch(() => ({ data: { data: [] } }))
-  const projects = projectsRes.data.data
-
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <UsersClient />

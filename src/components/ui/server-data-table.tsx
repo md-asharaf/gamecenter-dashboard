@@ -66,14 +66,14 @@ export function ServerDataTable<TData, TValue>({
   return (
     <div>
       {onSearch && (
-        <div className="flex items-center py-4">
-          <div className="relative max-w-sm w-full">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center py-4 w-full">
+          <div className="relative w-full sm:max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={searchPlaceholder}
               value={searchValue}
               onChange={(event) => setSearchValue(event.target.value)}
-              className="pl-8"
+              className="pl-8 w-full"
             />
           </div>
         </div>
@@ -133,12 +133,13 @@ export function ServerDataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between sm:justify-end gap-2 py-4">
         <Button
           variant="outline"
           size="sm"
           onClick={onPrevPage}
           disabled={!hasPrevPage || isLoading}
+          className="w-full sm:w-auto"
         >
           Previous
         </Button>
@@ -147,6 +148,7 @@ export function ServerDataTable<TData, TValue>({
           size="sm"
           onClick={onNextPage}
           disabled={!hasNextPage || isLoading}
+          className="w-full sm:w-auto"
         >
           Next
         </Button>

@@ -1,4 +1,6 @@
 "use client";
+import { AxiosError } from "axios";
+import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -53,9 +55,9 @@ export default function SettingsPage() {
       toast.success("Password updated successfully.");
       form.reset();
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error("Password update failed.", {
-        description: error.response?.data?.message || error.message,
+        description: getApiErrorMessage(error),
       });
     },
   });

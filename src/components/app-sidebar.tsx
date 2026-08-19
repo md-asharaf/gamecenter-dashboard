@@ -2,10 +2,10 @@
 
 import { LayoutDashboard, FolderKanban, Gamepad2, Settings, Users, LogOut, Sun, Moon } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 import { useAuth } from "@/providers/auth-provider";
 
 import {
@@ -21,22 +21,30 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
+interface NavItem {
+  title: string;
+  url: string;
+  icon: React.ElementType;
+  show: boolean;
+  exact?: boolean;
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const { user, logout } = useAuth();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const handleLogout = () => {
     toast.success("Logout successful.");
     logout();
   };
 
-  const navItems = [
+  const navItems: NavItem[] = [
     {
       title: "Overview",
       url: "/",
@@ -81,7 +89,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.filter(i => i.show).map((item) => {
-                const isActive = (item as any).exact ? pathname === item.url : pathname.startsWith(item.url);
+                const isActive = item.exact ? pathname === item.url : pathname.startsWith(item.url);
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton isActive={isActive} tooltip={item.title} render={<Link href={item.url} />}>

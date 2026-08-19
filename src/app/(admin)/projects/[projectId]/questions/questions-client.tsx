@@ -9,7 +9,7 @@ import { ColumnDef } from "@tanstack/react-table";
 
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/axios";
-import { Project } from "@/lib/types/project";
+import { Project, ApiResponse } from "@/lib/types/project";
 import { Question } from "@/lib/types/question";
 import { QuestionDialog } from "./components/question-dialog";
 import { UploadDialog } from "./components/upload-dialog";
@@ -24,14 +24,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { AxiosError } from "axios";
+import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
 
 interface QuestionPageResponse {
   items: Question[];
   lastEvaluatedKey: string | null;
 }
 
-export function QuestionsClient({ projectId, project }: { projectId: string; project: Project | null }) {
+export function QuestionsClient({ projectId, project: initialProject }: { projectId: string; project: Project | null }) {
   const queryClient = useQueryClient();
+
+  const { data: projectData } = useQuery<ApiResponse<Project>>({
+    queryKey: ["project", projectId],
+    queryFn: async () => {
+      const res = await api.get<ApiResponse<Project>>(`/projects/${projectId}`);
+      return res.data;
+    },
+    initialData: initialProject ? { success: true as const, data: initialProject } : undefined,
+    staleTime: 0,
+  });
+
+  const project: Project | null = projectData?.data ?? initialProject;
   const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
@@ -63,9 +77,9 @@ export function QuestionsClient({ projectId, project }: { projectId: string; pro
       toast.success("Question deleted successfully.");
       setDeleteId(null);
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error("Question deletion failed.", {
-        description: error.response?.data?.message || error.message,
+        description: getApiErrorMessage(error),
       });
       setDeleteId(null);
     },
@@ -144,32 +158,34 @@ export function QuestionsClient({ projectId, project }: { projectId: string; pro
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-4">
-        <Link href="/projects">
-          <Button variant="outline" size="icon">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{project?.name || "Project"} Questions</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage questions and entries for this project.
-          </p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Link href="/projects">
+            <Button variant="outline" size="icon">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{project?.name || "Project"} Questions</h1>
+            <p className="text-muted-foreground mt-1">
+              Manage questions and entries for this project.
+            </p>
+          </div>
         </div>
-        <div className="ml-auto flex gap-2">
-          <Button variant="outline" onClick={() => setIsUploadDialogOpen(true)}>
+        <div className="flex w-full sm:w-auto space-x-2">
+          <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => setIsUploadDialogOpen(true)}>
             <Upload className="mr-2 h-4 w-4" /> Upload CSV
           </Button>
-          <Button onClick={handleCreate}>
+          <Button className="flex-1 sm:flex-none" onClick={handleCreate}>
             <Plus className="mr-2 h-4 w-4" /> Add Question
           </Button>
         </div>
       </div>
 
-      <ServerDataTable 
-        columns={columns} 
-        data={questions} 
-        searchPlaceholder={`Search by ${project?.field1Label || 'Field 1'}...`} 
+      <ServerDataTable
+        columns={columns}
+        data={questions}
+        searchPlaceholder={`Search by ${project?.field1Label || 'Field 1'}...`}
         onSearch={handleSearch}
         onNextPage={handleNextPage}
         onPrevPage={handlePrevPage}
@@ -192,6 +208,7 @@ export function QuestionsClient({ projectId, project }: { projectId: string; pro
           open={isUploadDialogOpen}
           onOpenChange={setIsUploadDialogOpen}
           projectId={projectId}
+          onSuccess={() => queryClient.invalidateQueries({ queryKey: ["questions", projectId] })}
         />
       )}
 
@@ -205,7 +222,7 @@ export function QuestionsClient({ projectId, project }: { projectId: string; pro
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
                 if (deleteId) deleteMutation.mutate(deleteId);

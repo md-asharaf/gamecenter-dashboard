@@ -1,4 +1,6 @@
 "use client";
+import { AxiosError } from "axios";
+import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -51,8 +53,8 @@ export default function LoginPage() {
       });
       router.push("/projects");
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || "Invalid email or password.";
+    onError: (error: AxiosError<ApiError>) => {
+      const message = error.response?.data?.error || "Invalid email or password.";
       toast.error("Login failed.", {
         description: message,
       });

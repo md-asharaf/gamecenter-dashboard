@@ -1,4 +1,6 @@
 "use client";
+import { AxiosError } from "axios";
+import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -77,9 +79,9 @@ export function ProjectsClient() {
       toast.success("Project deleted successfully.");
       setDeleteId(null);
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error("Failed to delete project.", {
-        description: error.response?.data?.message || error.message,
+        description: getApiErrorMessage(error),
       });
       setDeleteId(null);
     },
@@ -140,14 +142,14 @@ export function ProjectsClient() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
           <p className="text-muted-foreground mt-1">
             Manage your game projects and configurations.
           </p>
         </div>
-        <Button onClick={handleCreate}>
+        <Button onClick={handleCreate} className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" /> Add Project
         </Button>
       </div>

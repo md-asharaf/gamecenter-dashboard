@@ -1,3 +1,5 @@
+export type { ApiResponse } from "@/lib/api/api-error";
+
 export interface Project {
   id: string;
   name: string;

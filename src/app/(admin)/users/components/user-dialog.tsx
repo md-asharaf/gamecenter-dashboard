@@ -1,7 +1,9 @@
 "use client";
+import { AxiosError } from "axios";
+import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
 
 import { useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2 } from "lucide-react";
@@ -37,6 +39,12 @@ const updateSchema = baseSchema.extend({
   password: z.string().optional().or(z.literal("")),
 });
 
+type FormValues = {
+  email: string;
+  password: string;
+  projectIds: string[];
+};
+
 interface UserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -58,8 +66,8 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
 
   const projects = projectData?.data?.items || [];
 
-  const form = useForm<z.infer<typeof createSchema> | z.infer<typeof updateSchema>>({
-    resolver: zodResolver(isEditing ? updateSchema : createSchema) as any,
+  const form = useForm<FormValues>({
+    resolver: zodResolver(isEditing ? updateSchema : createSchema) as Resolver<FormValues>,
     defaultValues: {
       email: "",
       password: "",
@@ -84,7 +92,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
   }, [user, open, form]);
 
   const mutation = useMutation({
-    mutationFn: async (values: any) => {
+    mutationFn: async (values: FormValues) => {
       if (isEditing) {
         const payload: UpdateAdminRequest = {
           email: values.email,
@@ -110,14 +118,14 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
       toast.success(isEditing ? "Sub-admin updated successfully." : "Sub-admin created successfully.");
       onOpenChange(false);
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(isEditing ? "Failed to update sub-admin." : "Failed to create sub-admin.", {
-        description: error.response?.data?.message || error.message,
+        description: getApiErrorMessage(error),
       });
     },
   });
 
-  const onSubmit = (values: any) => {
+  const onSubmit = (values: FormValues) => {
     mutation.mutate(values);
   };
 
@@ -138,7 +146,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
               <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
             )}
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="password">
               Password {isEditing && <span className="text-muted-foreground text-xs font-normal">(Leave blank to keep current)</span>}

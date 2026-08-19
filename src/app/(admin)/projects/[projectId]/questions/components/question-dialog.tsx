@@ -1,6 +1,8 @@
 "use client";
+import { AxiosError } from "axios";
+import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -95,9 +97,9 @@ export function QuestionDialog({ open, onOpenChange, question, project }: Questi
       toast.success(isEditing ? "Question updated successfully." : "Question created successfully.");
       onOpenChange(false);
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(isEditing ? "Question update failed." : "Question creation failed.", {
-        description: error.response?.data?.message || error.message,
+        description: getApiErrorMessage(error),
       });
     },
   });

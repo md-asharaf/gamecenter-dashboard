@@ -1,4 +1,6 @@
 "use client";
+import { AxiosError } from "axios";
+import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -77,9 +79,9 @@ export function UsersClient() {
       toast.success("Sub-admin deleted successfully.");
       setDeleteId(null);
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error("Failed to delete sub-admin.", {
-        description: error.response?.data?.message || error.message,
+        description: getApiErrorMessage(error),
       });
       setDeleteId(null);
     },
