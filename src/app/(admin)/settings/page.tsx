@@ -54,7 +54,7 @@ export default function SettingsPage() {
       form.reset();
     },
     onError: (error: any) => {
-      toast.error("Failed to update password", {
+      toast.error("Password update failed.", {
         description: error.response?.data?.message || error.message,
       });
     },

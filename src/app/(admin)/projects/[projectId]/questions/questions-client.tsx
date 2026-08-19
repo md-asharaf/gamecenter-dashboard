@@ -60,11 +60,11 @@ export function QuestionsClient({ projectId, project }: { projectId: string; pro
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["questions", projectId] });
-      toast.success("Question deleted successfully");
+      toast.success("Question deleted successfully.");
       setDeleteId(null);
     },
     onError: (error: any) => {
-      toast.error("Failed to delete question", {
+      toast.error("Question deletion failed.", {
         description: error.response?.data?.message || error.message,
       });
       setDeleteId(null);

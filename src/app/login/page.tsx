@@ -47,13 +47,13 @@ export default function LoginPage() {
     },
     onSuccess: () => {
       toast.success("Welcome back!", {
-        description: "You have successfully logged in.",
+        description: "Login successful.",
       });
       router.push("/projects");
     },
     onError: (error: any) => {
       const message = error.response?.data?.message || "Invalid email or password.";
-      toast.error("Login Failed", {
+      toast.error("Login failed.", {
         description: message,
       });
     },

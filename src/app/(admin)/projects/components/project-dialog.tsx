@@ -114,7 +114,7 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
       onOpenChange(false);
     },
     onError: (error: any) => {
-      toast.error(isEditing ? "Failed to update project" : "Failed to create project", {
+      toast.error(isEditing ? "Project update failed." : "Project creation failed.", {
         description: error.response?.data?.message || error.message,
       });
     },

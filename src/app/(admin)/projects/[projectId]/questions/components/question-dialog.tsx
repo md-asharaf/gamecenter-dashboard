@@ -92,11 +92,11 @@ export function QuestionDialog({ open, onOpenChange, question, project }: Questi
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["questions", project.id] });
-      toast.success(isEditing ? "Question updated successfully" : "Question created successfully");
+      toast.success(isEditing ? "Question updated successfully." : "Question created successfully.");
       onOpenChange(false);
     },
     onError: (error: any) => {
-      toast.error(isEditing ? "Failed to update question" : "Failed to create question", {
+      toast.error(isEditing ? "Question update failed." : "Question creation failed.", {
         description: error.response?.data?.message || error.message,
       });
     },

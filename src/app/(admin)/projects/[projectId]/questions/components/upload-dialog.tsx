@@ -55,11 +55,11 @@ export function UploadDialog({ open, onOpenChange, projectId }: UploadDialogProp
         },
       });
 
-      toast.success("File uploaded successfully. It will be processed shortly.");
+      toast.success("File upload complete. Processing initiated.");
       onOpenChange(false);
       setFile(null);
     } catch (error: any) {
-      toast.error("Failed to upload file", {
+      toast.error("File upload failed.", {
         description: error.response?.data?.message || error.message,
       });
     } finally {

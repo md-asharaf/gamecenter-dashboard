@@ -32,7 +32,7 @@ export function AppSidebar() {
   }, []);
 
   const handleLogout = () => {
-    toast.success("Logged out successfully");
+    toast.success("Logout successful.");
     logout();
   };
 
