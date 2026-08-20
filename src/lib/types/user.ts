@@ -10,11 +10,13 @@ export interface User {
 export interface RegisterAdminRequest {
   email: string;
   password?: string;
-  projectIds: string[];
+  projectIds?: string[];
+  role?: "SUPER_ADMIN" | "SUB_ADMIN";
 }
 
 export interface UpdateAdminRequest {
   email: string;
   password?: string;
-  projectIds: string[];
+  projectIds?: string[];
+  role?: "SUPER_ADMIN" | "SUB_ADMIN";
 }

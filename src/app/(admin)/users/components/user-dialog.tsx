@@ -28,6 +28,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 const baseSchema = z.object({
   email: z.string().email("Invalid email format."),
+  role: z.enum(["SUPER_ADMIN", "SUB_ADMIN"]).default("SUB_ADMIN"),
   projectIds: z.array(z.string()).default([]),
 });
 
@@ -42,6 +43,7 @@ const updateSchema = baseSchema.extend({
 type FormValues = {
   email: string;
   password: string;
+  role: "SUPER_ADMIN" | "SUB_ADMIN";
   projectIds: string[];
 };
 
@@ -71,6 +73,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
     defaultValues: {
       email: "",
       password: "",
+      role: "SUB_ADMIN",
       projectIds: [],
     },
   });
@@ -80,12 +83,14 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
       form.reset({
         email: user.email,
         password: "",
+        role: (user.role as "SUPER_ADMIN" | "SUB_ADMIN") || "SUB_ADMIN",
         projectIds: user.projectIds || [],
       });
     } else if (!open) {
       form.reset({
         email: "",
         password: "",
+        role: "SUB_ADMIN",
         projectIds: [],
       });
     }
@@ -96,8 +101,12 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
       if (isEditing) {
         const payload: UpdateAdminRequest = {
           email: values.email,
+          role: values.role,
           projectIds: values.projectIds,
         };
+        if (values.role === "SUPER_ADMIN") {
+          delete payload.projectIds;
+        }
         if (values.password) {
           payload.password = values.password;
         }
@@ -107,8 +116,12 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
         const payload: RegisterAdminRequest = {
           email: values.email,
           password: values.password,
+          role: values.role,
           projectIds: values.projectIds,
         };
+        if (values.role === "SUPER_ADMIN") {
+          delete payload.projectIds;
+        }
         const res = await api.post("/admins", payload);
         return res.data;
       }
@@ -133,9 +146,9 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Sub-Admin" : "Add Sub-Admin"}</DialogTitle>
+          <DialogTitle>{isEditing ? "Edit Admin" : "Add Admin"}</DialogTitle>
           <DialogDescription>
-            {isEditing ? "Modify the admin details." : "Create a new sub-admin account."}
+            {isEditing ? "Modify the admin details." : "Create a new admin account."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -158,8 +171,32 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
           </div>
 
           <div className="space-y-2">
-            <Label>Project Assignments</Label>
-            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 p-4">
+            <Controller
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <div className="flex flex-row items-center space-x-3 rounded-md border border-zinc-200 dark:border-zinc-800 p-4">
+                  <Checkbox
+                    id="is-super-admin"
+                    checked={field.value === "SUPER_ADMIN"}
+                    onCheckedChange={(checked) => {
+                      field.onChange(checked ? "SUPER_ADMIN" : "SUB_ADMIN");
+                    }}
+                  />
+                  <div className="space-y-1 leading-none">
+                    <Label htmlFor="is-super-admin" className="cursor-pointer font-normal">
+                      Make this user a Super Admin?
+                    </Label>
+                  </div>
+                </div>
+              )}
+            />
+          </div>
+
+          {form.watch("role") !== "SUPER_ADMIN" && (
+            <div className="space-y-2">
+              <Label>Project Assignments</Label>
+              <div className="rounded-md border border-zinc-200 dark:border-zinc-800 p-4">
               <ScrollArea className="h-40">
                 {projects.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No projects available.</p>
@@ -205,6 +242,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
               <p className="text-sm text-red-500">{form.formState.errors.projectIds.message as string}</p>
             )}
           </div>
+          )}
 
           <div className="pt-4 flex justify-end space-x-2">
             <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
