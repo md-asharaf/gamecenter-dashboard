@@ -54,7 +54,6 @@ api.interceptors.response.use(
           { withCredentials: true }
         );
         processQueue(null, "Refreshed");
-        return api(originalRequest);
       } catch (err) {
         processQueue(err, null);
         if (typeof window !== "undefined" && window.location.pathname !== "/login") {
@@ -64,6 +63,8 @@ api.interceptors.response.use(
       } finally {
         isRefreshing = false;
       }
+
+      return api(originalRequest);
     }
 
     return Promise.reject(error);
