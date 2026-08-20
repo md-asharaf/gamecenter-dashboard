@@ -6,6 +6,8 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
+  RowSelectionState,
+  OnChangeFn,
 } from "@tanstack/react-table";
 import {
   Table,
@@ -30,6 +32,9 @@ interface ServerDataTableProps<TData, TValue> {
   hasNextPage?: boolean;
   hasPrevPage?: boolean;
   isLoading?: boolean;
+  enableRowSelection?: boolean;
+  rowSelection?: RowSelectionState;
+  onRowSelectionChange?: OnChangeFn<RowSelectionState>;
 }
 
 export function ServerDataTable<TData, TValue>({
@@ -42,6 +47,9 @@ export function ServerDataTable<TData, TValue>({
   hasNextPage = false,
   hasPrevPage = false,
   isLoading = false,
+  enableRowSelection = false,
+  rowSelection,
+  onRowSelectionChange,
 }: ServerDataTableProps<TData, TValue>) {
   const [searchValue, setSearchValue] = useState("");
   const debouncedSearch = useDebounce(searchValue, 500);
@@ -61,6 +69,11 @@ export function ServerDataTable<TData, TValue>({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    enableRowSelection,
+    onRowSelectionChange,
+    state: {
+      rowSelection: rowSelection || {},
+    },
   });
 
   return (
@@ -94,9 +107,9 @@ export function ServerDataTable<TData, TValue>({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   );
                 })}

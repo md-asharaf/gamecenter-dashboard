@@ -8,6 +8,7 @@ export interface Project {
   field1Label: string;
   field2Label: string;
   field3Label: string;
+  quizFolderId?: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -26,4 +27,5 @@ export interface UpdateProjectRequest {
   field1Label: string;
   field2Label: string;
   field3Label: string;
+  quizFolderId?: string;
 }

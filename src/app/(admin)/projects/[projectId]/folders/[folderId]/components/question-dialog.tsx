@@ -29,9 +29,10 @@ interface QuestionDialogProps {
   onOpenChange: (open: boolean) => void;
   question?: Question | null;
   project: Project;
+  folderId: string;
 }
 
-export function QuestionDialog({ open, onOpenChange, question, project }: QuestionDialogProps) {
+export function QuestionDialog({ open, onOpenChange, question, project, folderId }: QuestionDialogProps) {
   const isEditing = !!question;
   const queryClient = useQueryClient();
 
@@ -81,19 +82,19 @@ export function QuestionDialog({ open, onOpenChange, question, project }: Questi
       }
 
       if (isEditing) {
-        const res = await api.put(`/projects/${project.id}/questions/${question.id}`, {
+        const res = await api.put(`/projects/${project.id}/folders/${folderId}/questions/${question.id}`, {
           dynamicFields,
         });
         return res.data;
       } else {
-        const res = await api.post(`/projects/${project.id}/questions`, {
+        const res = await api.post(`/projects/${project.id}/folders/${folderId}/questions`, {
           dynamicFields,
         });
         return res.data;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["questions", project.id] });
+      queryClient.invalidateQueries({ queryKey: ["questions", project.id, folderId] });
       toast.success(isEditing ? "Question updated successfully." : "Question created successfully.");
       onOpenChange(false);
     },

@@ -22,10 +22,11 @@ interface UploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId: string;
+  folderId: string;
   onSuccess?: () => void;
 }
 
-export function UploadDialog({ open, onOpenChange, projectId, onSuccess }: UploadDialogProps) {
+export function UploadDialog({ open, onOpenChange, projectId, folderId, onSuccess }: UploadDialogProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -50,7 +51,7 @@ export function UploadDialog({ open, onOpenChange, projectId, onSuccess }: Uploa
         return;
       }
 
-      const res = await api.post(`/projects/${projectId}/uploads/presigned-url?ext=${ext}`);
+      const res = await api.post(`/projects/${projectId}/folders/${folderId}/uploads/presigned-url?ext=${ext}`);
       const { url, key: fullS3Key } = res.data.data;
 
       toastId = toast.loading("Uploading file... 0%");
@@ -82,7 +83,7 @@ export function UploadDialog({ open, onOpenChange, projectId, onSuccess }: Uploa
         await new Promise((resolve) => setTimeout(resolve, 2000));
         attempts++;
         try {
-          const statusRes = await api.get(`/projects/${projectId}/uploads/${fileName}/status`);
+          const statusRes = await api.get(`/projects/${projectId}/folders/${folderId}/uploads/${fileName}/status`);
           const job = statusRes.data.data;
           notFoundCount = 0;
 

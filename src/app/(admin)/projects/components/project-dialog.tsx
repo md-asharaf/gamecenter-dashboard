@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2 } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import {
@@ -30,6 +30,8 @@ import {
 
 import { api } from "@/lib/api/axios";
 import { Project, CreateProjectRequest, UpdateProjectRequest } from "@/lib/types/project";
+import { getFolders } from "@/lib/api/folder";
+import { Folder, FolderPageResponse } from "@/lib/types/folder";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -38,6 +40,7 @@ const formSchema = z.object({
   field3Label: z.string().min(1, "Field 3 label is required"),
   numberOfQuestionsInQuiz: z.number().min(1).max(100),
   mainQuestionLabel: z.string(),
+  quizFolderId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -57,12 +60,21 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
     defaultValues: {
       name: "",
       field1Label: "Word",
-      field2Label: "Context",
-      field3Label: "Translation",
+      field2Label: "Definition",
+      field3Label: "Hint",
       numberOfQuestionsInQuiz: 10,
       mainQuestionLabel: "field1",
+      quizFolderId: undefined,
     },
   });
+
+  const { data: foldersPage } = useQuery<FolderPageResponse>({
+    queryKey: ["folders", project?.id],
+    queryFn: () => getFolders(project!.id, 50),
+    enabled: !!project?.id,
+  });
+  
+  const folders = foldersPage?.items || [];
 
   useEffect(() => {
     if (project && open) {
@@ -73,6 +85,7 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
         field3Label: project.field3Label,
         numberOfQuestionsInQuiz: project.numberOfQuestionsInQuiz || 10,
         mainQuestionLabel: project.mainQuestionLabel || project.field1Label,
+        quizFolderId: project.quizFolderId,
       });
     } else if (!open) {
       form.reset({
@@ -82,6 +95,7 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
         field3Label: "Translation",
         numberOfQuestionsInQuiz: 10,
         mainQuestionLabel: "field1",
+        quizFolderId: undefined,
       });
     }
   }, [project, open, form]);
@@ -96,6 +110,7 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
           field3Label: values.field3Label,
           numberOfQuestionsInQuiz: values.numberOfQuestionsInQuiz || 10,
           mainQuestionLabel: values.mainQuestionLabel || "field1",
+          quizFolderId: values.quizFolderId || undefined,
         };
         const res = await api.put(`/projects/${project.id}`, payload);
         return res.data;
@@ -146,7 +161,7 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
               <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
             )}
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="field1Label">Field 1 Label</Label>
@@ -170,23 +185,45 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
               </div>
             )}
           </div>
-          
+
           {isEditing && (
-            <div className="space-y-2">
-              <Label>Main Question Label</Label>
-              <Select 
-                onValueChange={(value) => form.setValue("mainQuestionLabel", value || "")} 
-                defaultValue={form.getValues("mainQuestionLabel") || ""}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select the main question label" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={form.watch("field1Label") || "field1"}>{form.watch("field1Label") || "Field 1"}</SelectItem>
-                  <SelectItem value={form.watch("field2Label") || "field2"}>{form.watch("field2Label") || "Field 2"}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <>
+              <div className="space-y-2">
+                <Label>Main Question Label</Label>
+                <Select
+                  onValueChange={(value) => form.setValue("mainQuestionLabel", value || "")}
+                  defaultValue={form.getValues("mainQuestionLabel") || ""}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select the main question label" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={form.watch("field1Label") || "field1"}>{form.watch("field1Label") || "Field 1"}</SelectItem>
+                    <SelectItem value={form.watch("field2Label") || "field2"}>{form.watch("field2Label") || "Field 2"}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Active Quiz Folder</Label>
+                <Select
+                  onValueChange={(value) => form.setValue("quizFolderId", value || "")}
+                  defaultValue={form.getValues("quizFolderId") || ""}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select folder for quizzes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {folders?.map(folder => (
+                      <SelectItem key={folder.id} value={folder.id}>{folder.name}</SelectItem>
+                    ))}
+                    {(!folders || folders.length === 0) && (
+                      <SelectItem value="none" disabled>No folders found</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
           )}
 
           <div className="pt-4 flex justify-end space-x-2">

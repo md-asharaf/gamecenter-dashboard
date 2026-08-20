@@ -8,6 +8,7 @@ import Link from "next/link";
 import { ColumnDef } from "@tanstack/react-table";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { api } from "@/lib/api/axios";
 import { Project, ApiResponse } from "@/lib/types/project";
 import { Question } from "@/lib/types/question";
@@ -32,7 +33,7 @@ interface QuestionPageResponse {
   lastEvaluatedKey: string | null;
 }
 
-export function QuestionsClient({ projectId, project: initialProject }: { projectId: string; project: Project | null }) {
+export function QuestionsClient({ projectId, folderId, project: initialProject }: { projectId: string; folderId: string; project: Project | null }) {
   const queryClient = useQueryClient();
 
   const { data: projectData } = useQuery<ApiResponse<Project>>({
@@ -54,26 +55,27 @@ export function QuestionsClient({ projectId, project: initialProject }: { projec
   const [history, setHistory] = useState<string[]>([]);
   const [currentCursor, setCurrentCursor] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [rowSelection, setRowSelection] = useState({});
 
   const { data, isFetching } = useQuery<{ data: QuestionPageResponse }>({
-    queryKey: ["questions", projectId, currentCursor, search],
+    queryKey: ["questions", projectId, folderId, currentCursor, search],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.append("limit", "10");
       if (currentCursor) params.append("lastEvaluatedKey", currentCursor);
       if (search) params.append("search", search);
 
-      const res = await api.get(`/projects/${projectId}/questions?${params.toString()}`);
+      const res = await api.get(`/projects/${projectId}/folders/${folderId}/questions?${params.toString()}`);
       return res.data;
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/projects/${projectId}/questions/${id}`);
+      await api.delete(`/projects/${projectId}/folders/${folderId}/questions/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["questions", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["questions", projectId, folderId] });
       toast.success("Question deleted successfully.");
       setDeleteId(null);
     },
@@ -82,6 +84,22 @@ export function QuestionsClient({ projectId, project: initialProject }: { projec
         description: getApiErrorMessage(error),
       });
       setDeleteId(null);
+    },
+  });
+
+  const deleteMultipleMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      await api.delete(`/projects/${projectId}/folders/${folderId}/questions`, { data: ids });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["questions", projectId, folderId] });
+      toast.success("Selected questions deleted successfully.");
+      setRowSelection({});
+    },
+    onError: (error: AxiosError<ApiError>) => {
+      toast.error("Failed to delete selected questions.", {
+        description: getApiErrorMessage(error),
+      });
     },
   });
 
@@ -118,6 +136,25 @@ export function QuestionsClient({ projectId, project: initialProject }: { projec
   };
 
   const columns: ColumnDef<Question>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
     {
       id: "field1",
       header: project?.field1Label || "Field 1",
@@ -173,6 +210,11 @@ export function QuestionsClient({ projectId, project: initialProject }: { projec
           </div>
         </div>
         <div className="flex w-full sm:w-auto space-x-2">
+          {Object.keys(rowSelection).length > 0 && (
+            <Button variant="destructive" className="flex-1 sm:flex-none" onClick={() => deleteMultipleMutation.mutate(Object.keys(rowSelection).map(idx => questions[parseInt(idx)]?.id).filter(Boolean))}>
+              <Trash2 className="mr-2 h-4 w-4" /> Delete ({Object.keys(rowSelection).length})
+            </Button>
+          )}
           <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => setIsUploadDialogOpen(true)}>
             <Upload className="mr-2 h-4 w-4" /> Upload CSV/DOCX
           </Button>
@@ -192,6 +234,9 @@ export function QuestionsClient({ projectId, project: initialProject }: { projec
         hasNextPage={hasNextPage}
         hasPrevPage={hasPrevPage}
         isLoading={isFetching}
+        enableRowSelection={true}
+        rowSelection={rowSelection}
+        onRowSelectionChange={setRowSelection}
       />
 
       {project && (
@@ -200,6 +245,7 @@ export function QuestionsClient({ projectId, project: initialProject }: { projec
           onOpenChange={setIsQuestionDialogOpen}
           question={selectedQuestion}
           project={project}
+          folderId={folderId}
         />
       )}
 
@@ -208,7 +254,8 @@ export function QuestionsClient({ projectId, project: initialProject }: { projec
           open={isUploadDialogOpen}
           onOpenChange={setIsUploadDialogOpen}
           projectId={projectId}
-          onSuccess={() => queryClient.invalidateQueries({ queryKey: ["questions", projectId] })}
+          folderId={folderId}
+          onSuccess={() => queryClient.invalidateQueries({ queryKey: ["questions", projectId, folderId] })}
         />
       )}
 

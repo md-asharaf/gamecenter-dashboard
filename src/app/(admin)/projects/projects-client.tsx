@@ -102,7 +102,7 @@ export function ProjectsClient() {
       accessorKey: "name",
       header: "Name",
       cell: ({ row }) => (
-        <Link href={`/projects/${row.original.id}/questions`} className="hover:underline text-primary font-medium">
+        <Link href={`/projects/${row.original.id}`} className="hover:underline text-primary font-medium">
           {row.getValue("name")}
         </Link>
       ),

@@ -1,0 +1,115 @@
+"use client";
+
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Loader2 } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Folder, CreateFolderRequest, UpdateFolderRequest } from "@/lib/types/folder";
+import { createFolder, updateFolder } from "@/lib/api/folder";
+
+interface FolderDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  folder?: Folder | null;
+  projectId: string;
+}
+
+export function FolderDialog({ open, onOpenChange, folder, projectId }: FolderDialogProps) {
+  const isEditing = !!folder;
+  const queryClient = useQueryClient();
+
+  const formSchema = z.object({
+    name: z.string().min(1, "Folder name is required").max(100, "Name must be less than 100 characters"),
+  });
+
+  type FormValues = z.infer<typeof formSchema>;
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+    },
+  });
+
+  useEffect(() => {
+    if (folder && open) {
+      form.reset({
+        name: folder.name,
+      });
+    } else if (!open) {
+      form.reset({
+        name: "",
+      });
+    }
+  }, [folder, open, form]);
+
+  const mutation = useMutation({
+    mutationFn: async (values: FormValues) => {
+      if (isEditing) {
+        return await updateFolder(projectId, folder.id, values);
+      } else {
+        return await createFolder(projectId, values);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["folders", projectId] });
+      toast.success(isEditing ? "Folder updated successfully." : "Folder created successfully.");
+      onOpenChange(false);
+    },
+    onError: (error: any) => {
+      toast.error(isEditing ? "Folder update failed." : "Folder creation failed.", {
+        description: error.response?.data?.message || "An unknown error occurred",
+      });
+    },
+  });
+
+  const onSubmit = (values: FormValues) => {
+    mutation.mutate(values);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{isEditing ? "Edit Folder" : "Create Folder"}</DialogTitle>
+          <DialogDescription>
+            {isEditing ? "Modify the folder details below." : "Enter details for the new folder."}
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Name</Label>
+            <Input id="name" placeholder="e.g. Science Quiz" {...form.register("name")} />
+            {form.formState.errors.name && (
+              <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
+            )}
+          </div>
+          
+          <div className="pt-4 flex justify-end space-x-2">
+            <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={mutation.isPending}>
+              {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isEditing ? "Save Changes" : "Create"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
