@@ -1,10 +1,13 @@
 import { api } from "./axios";
 import { Folder, CreateFolderRequest, UpdateFolderRequest, FolderPageResponse } from "../types/folder";
 
-export const getFolders = async (projectId: string, limit: number = 10, lastEvaluatedKey?: string): Promise<FolderPageResponse> => {
+export const getFolders = async (projectId: string, limit: number = 10, lastEvaluatedKey?: string, search?: string): Promise<FolderPageResponse> => {
   const params = new URLSearchParams({ limit: limit.toString() });
   if (lastEvaluatedKey) {
     params.append('lastEvaluatedKey', lastEvaluatedKey);
+  }
+  if (search) {
+    params.append('search', search);
   }
   const { data } = await api.get<FolderPageResponse>(`/projects/${projectId}/folders?${params.toString()}`);
   return data;

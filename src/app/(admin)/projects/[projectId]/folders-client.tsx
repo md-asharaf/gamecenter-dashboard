@@ -50,13 +50,18 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
   const [limit] = useState(10);
   const [keyHistory, setKeyHistory] = useState<string[]>([]);
   const currentKey = keyHistory[keyHistory.length - 1];
+  const [search, setSearch] = useState("");
 
   const { data: pageData, isFetching } = useQuery<FolderPageResponse>({
-    queryKey: ["folders", projectId, limit, currentKey],
-    queryFn: () => getFolders(projectId, limit, currentKey),
+    queryKey: ["folders", projectId, limit, currentKey, search],
+    queryFn: () => getFolders(projectId, limit, currentKey, search),
   });
 
-  const folders = pageData?.items || [];
+  const folders = [...(pageData?.items || [])].sort((a, b) => {
+    if (a.id === project?.quizFolderId) return -1;
+    if (b.id === project?.quizFolderId) return 1;
+    return 0;
+  });
 
   const handleNextPage = () => {
     if (pageData?.lastEvaluatedKey) {
@@ -66,6 +71,11 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
 
   const handlePrevPage = () => {
     setKeyHistory((prev) => prev.slice(0, -1));
+  };
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setKeyHistory([]);
   };
 
   const deleteMutation = useMutation({
@@ -98,6 +108,31 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
         description: error.response?.data?.message || "An error occurred.",
       });
       setEmptyId(null);
+    },
+  });
+
+  const makeActiveMutation = useMutation({
+    mutationFn: async (folderId: string) => {
+      if (!project) return;
+      const payload = {
+        name: project.name,
+        field1Label: project.field1Label,
+        field2Label: project.field2Label,
+        field3Label: project.field3Label,
+        numberOfQuestionsInQuiz: project.numberOfQuestionsInQuiz || 10,
+        mainQuestionLabel: project.mainQuestionLabel || "field1",
+        quizFolderId: folderId,
+      };
+      await api.put(`/projects/${project.id}`, payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+      toast.success("Active quiz folder updated.");
+    },
+    onError: (error: any) => {
+      toast.error("Failed to update active folder.", {
+        description: error.response?.data?.message || "An error occurred.",
+      });
     },
   });
 
@@ -139,8 +174,19 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
       header: () => <div className="text-right">Actions</div>,
       cell: ({ row }) => {
         const folder = row.original;
+        const isActive = project?.quizFolderId === folder.id;
         return (
           <div className="flex justify-end space-x-2">
+            {!isActive && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => makeActiveMutation.mutate(folder.id)}
+                disabled={makeActiveMutation.isPending}
+              >
+                Make Active
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={() => handleEdit(folder)}>
               <Settings2 className="h-4 w-4 mr-2" /> Edit
             </Button>
@@ -183,6 +229,8 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
         columns={columns}
         data={folders}
         isLoading={isFetching}
+        onSearch={handleSearch}
+        searchPlaceholder="Search folders..."
         onNextPage={handleNextPage}
         onPrevPage={handlePrevPage}
         hasNextPage={!!pageData?.lastEvaluatedKey}
