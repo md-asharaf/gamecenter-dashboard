@@ -39,15 +39,16 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
   const handleUpload = async () => {
     if (!file) return;
 
+    const currentFile = file;
+    setFile(null);
+    onOpenChange(false);
+
     let toastId: string | number | undefined;
 
     try {
-      setIsUploading(true);
-
-      const ext = file.name.split('.').pop()?.toLowerCase();
+      const ext = currentFile.name.split('.').pop()?.toLowerCase();
       if (ext !== 'csv' && ext !== 'docx') {
         toast.error("Unsupported file type. Please upload a .csv or .docx file.");
-        setIsUploading(false);
         return;
       }
 
@@ -56,9 +57,9 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
 
       toastId = toast.loading("Uploading file... 0%");
 
-      await axios.put(url, file, {
+      await axios.put(url, currentFile, {
         headers: {
-          'Content-Type': file.type || 'application/octet-stream',
+          'Content-Type': currentFile.type || 'application/octet-stream',
         },
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total) {
@@ -90,8 +91,6 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
           if (job.status === "COMPLETED") {
             toast.success("File upload and processing complete. Questions imported.", { id: toastId });
             isDone = true;
-            onOpenChange(false);
-            setFile(null);
             onSuccess?.();
           } else if (job.status === "FAILED") {
             toast.error("Processing failed on server.", {
@@ -124,8 +123,6 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
         id: toastId,
         description: getApiErrorMessage(axiosErr),
       });
-    } finally {
-      setIsUploading(false);
     }
   };
 

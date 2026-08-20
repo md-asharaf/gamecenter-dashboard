@@ -26,9 +26,12 @@ export default async function QuestionsPage({
   const projectList = projectRes?.data?.data?.items || []
   const project = projectList.find((p: Project) => p.id === projectId) || null
 
+  const folderRes = await api.get(`/projects/${projectId}/folders/${folderId}`).catch(() => null)
+  const folder = folderRes?.data || null
+
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <QuestionsClient projectId={projectId} folderId={folderId} project={project} />
+      <QuestionsClient projectId={projectId} folderId={folderId} project={project} folder={folder} />
     </HydrationBoundary>
   )
 }

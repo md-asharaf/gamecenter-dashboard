@@ -27,13 +27,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AxiosError } from "axios";
 import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
+import { Folder } from "@/lib/types/folder";
 
 interface QuestionPageResponse {
   items: Question[];
   lastEvaluatedKey: string | null;
 }
 
-export function QuestionsClient({ projectId, folderId, project: initialProject }: { projectId: string; folderId: string; project: Project | null }) {
+export function QuestionsClient({ projectId, folderId, project: initialProject, folder }: { projectId: string; folderId: string; project: Project | null; folder: Folder | null }) {
   const queryClient = useQueryClient();
 
   const { data: projectData } = useQuery<ApiResponse<Project>>({
@@ -197,13 +198,13 @@ export function QuestionsClient({ projectId, folderId, project: initialProject }
     <div className="flex flex-col gap-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Link href="/projects">
+          <Link href={`/projects/${projectId}`}>
             <Button variant="outline" size="icon">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{project?.name || "Project"} Questions</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{folder?.name + " Questions" || "Questions"}</h1>
             <p className="text-muted-foreground mt-1">
               Manage questions and entries for this project.
             </p>

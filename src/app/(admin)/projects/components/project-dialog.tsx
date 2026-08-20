@@ -73,7 +73,7 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
     queryFn: () => getFolders(project!.id, 50),
     enabled: !!project?.id,
   });
-  
+
   const folders = foldersPage?.items || [];
 
   useEffect(() => {
@@ -215,7 +215,7 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
                   </SelectTrigger>
                   <SelectContent>
                     {folders?.map(folder => (
-                      <SelectItem key={folder.id} value={folder.id}>{folder.name}</SelectItem>
+                      <SelectItem key={folder.id} value={folder.id}>{folder.name} </SelectItem>
                     ))}
                     {(!folders || folders.length === 0) && (
                       <SelectItem value="none" disabled>No folders found</SelectItem>
