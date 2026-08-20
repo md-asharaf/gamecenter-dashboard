@@ -40,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <AuthProvider>
               <TooltipProvider>
                 {children}
-                <Toaster />
+                <Toaster richColors position="top-right" expand={false} />
               </TooltipProvider>
             </AuthProvider>
           </QueryProvider>
