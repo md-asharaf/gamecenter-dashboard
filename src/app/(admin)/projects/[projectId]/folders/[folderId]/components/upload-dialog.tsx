@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Loader2, UploadCloud, FileDown, Info } from "lucide-react";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
 
@@ -30,25 +31,17 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  const [instructions, setInstructions] = useState<string[]>([]);
-  const [isLoadingInstructions, setIsLoadingInstructions] = useState(false);
 
-  useEffect(() => {
-    if (open) {
-      const fetchInstructions = async () => {
-        setIsLoadingInstructions(true);
-        try {
-          const res = await api.get(`/projects/${projectId}/upload-instructions`);
-          setInstructions(res.data.data);
-        } catch (error) {
-          console.error("Failed to load instructions", error);
-        } finally {
-          setIsLoadingInstructions(false);
-        }
-      };
-      fetchInstructions();
-    }
-  }, [open, projectId]);
+  const { data: instructionsData, isLoading: isLoadingInstructions } = useQuery({
+    queryKey: ['uploadInstructions', projectId],
+    queryFn: async () => {
+      const res = await api.get(`/projects/${projectId}/upload-instructions`);
+      return res.data.data as string[];
+    },
+    enabled: open,
+  });
+
+  const instructions = instructionsData || [];
 
   const handleDownloadTemplate = async () => {
     try {
