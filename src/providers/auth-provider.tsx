@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { User } from "@/lib/types/user";
 import { api } from "@/lib/api/axios";
 import { Loader2 } from "lucide-react";
@@ -15,7 +16,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
-  logout: () => {},
+  logout: () => { },
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -23,6 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -51,8 +53,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error("Logout failed on backend", e);
     }
+
+    queryClient.clear();
     setUser(null);
-    router.push("/login");
+    window.location.href = "/login";
   };
 
   if (isLoading) {
