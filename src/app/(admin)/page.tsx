@@ -9,12 +9,26 @@ import {
   AreaChart,
   BarChart,
   Bar,
+  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
   CartesianGrid
 } from "recharts";
+
+const COLORS = [
+  '#8b5cf6', // Violet
+  '#3b82f6', // Blue
+  '#10b981', // Emerald
+  '#f59e0b', // Amber
+  '#ef4444', // Red
+  '#ec4899', // Pink
+  '#06b6d4', // Cyan
+  '#84cc16', // Lime
+  '#f97316', // Orange
+  '#a855f7'  // Purple
+];
 
 import {
   Card,
@@ -216,10 +230,13 @@ export default function OverviewPage() {
                     />
                     <Bar
                       dataKey="questionCount"
-                      fill="hsl(var(--primary))"
                       radius={[4, 4, 0, 0]}
                       name="Questions"
-                    />
+                    >
+                      {stats.projectStats.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
