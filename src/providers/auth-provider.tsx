@@ -1,8 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { User } from "@/lib/types/user";
 import { api } from "@/lib/api/axios";
 import { Loader2 } from "lucide-react";
@@ -20,32 +20,29 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await api.get("/admins/me");
-        setUser(res.data.data);
-        if (pathname === "/login") {
-          router.push("/");
-        }
-      } catch {
-        setUser(null);
-        if (pathname !== "/login") {
-          router.push("/login");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const { data: user = null, isLoading, isError } = useQuery({
+    queryKey: ['auth-user'],
+    queryFn: async () => {
+      const res = await api.get("/admins/me");
+      return res.data.data as User;
+    },
+    retry: false,
+    staleTime: Infinity,
+  });
 
-    fetchUser();
-  }, [pathname, router]);
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (user && pathname === "/login") {
+      router.push("/");
+    } else if (isError && pathname !== "/login") {
+      router.push("/login");
+    }
+  }, [user, isError, isLoading, pathname, router]);
 
   const logout = async () => {
     try {
@@ -55,7 +52,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     queryClient.clear();
-    setUser(null);
     window.location.href = "/login";
   };
 

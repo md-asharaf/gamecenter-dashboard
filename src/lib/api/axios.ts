@@ -9,53 +9,56 @@ export const api = axios.create({
   },
 });
 
+const refreshClient = axios.create({
+  baseURL: API_URL,
+  withCredentials: true,
+});
+
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (value?: unknown) => void;
   reject: (reason?: unknown) => void;
 }> = [];
 
-const processQueue = (error: unknown, token: string | null = null) => {
+const processQueue = (error: unknown) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
     } else {
-      prom.resolve(token);
+      prom.resolve();
     }
   });
   failedQueue = [];
 };
 
+const SKIP_REFRESH_URLS = ["/auth/login", "/auth/refresh"];
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const requestUrl: string = originalRequest.url || "";
 
-    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes("/auth/login")) {
+    const shouldSkip = SKIP_REFRESH_URLS.some((url) => requestUrl.includes(url));
+
+    if (error.response?.status === 401 && !originalRequest._retry && !shouldSkip) {
       if (isRefreshing) {
         return new Promise(function (resolve, reject) {
           failedQueue.push({ resolve, reject });
         })
-          .then(() => {
-            return api(originalRequest);
-          })
-          .catch((err) => {
-            return Promise.reject(err);
-          });
+          .then(() => api(originalRequest))
+          .catch((err) => Promise.reject(err));
       }
 
       originalRequest._retry = true;
       isRefreshing = true;
 
       try {
-        await axios.post(
-          `${API_URL}/auth/refresh`,
-          {},
-          { withCredentials: true }
-        );
-        processQueue(null, "Refreshed");
+        await refreshClient.post("/auth/refresh");
+        processQueue(null);
+        return api(originalRequest);
       } catch (err) {
-        processQueue(err, null);
+        processQueue(err);
         if (typeof window !== "undefined" && window.location.pathname !== "/login") {
           window.location.href = "/login";
         }
@@ -63,8 +66,6 @@ api.interceptors.response.use(
       } finally {
         isRefreshing = false;
       }
-
-      return api(originalRequest);
     }
 
     return Promise.reject(error);
