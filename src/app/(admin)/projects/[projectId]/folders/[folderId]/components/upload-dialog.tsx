@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2, UploadCloud } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Loader2, UploadCloud, FileDown, Info } from "lucide-react";
 import { toast } from "sonner";
 import axios, { AxiosError } from "axios";
 import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
@@ -29,6 +29,43 @@ interface UploadDialogProps {
 export function UploadDialog({ open, onOpenChange, projectId, folderId, onSuccess }: UploadDialogProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [instructions, setInstructions] = useState<string[]>([]);
+  const [isLoadingInstructions, setIsLoadingInstructions] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      const fetchInstructions = async () => {
+        setIsLoadingInstructions(true);
+        try {
+          const res = await api.get(`/projects/${projectId}/upload-instructions`);
+          setInstructions(res.data.data);
+        } catch (error) {
+          console.error("Failed to load instructions", error);
+        } finally {
+          setIsLoadingInstructions(false);
+        }
+      };
+      fetchInstructions();
+    }
+  }, [open, projectId]);
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const res = await api.get(`/projects/${projectId}/upload-template`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'upload_template.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      toast.error("Failed to download template.");
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -40,8 +77,8 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
     if (!file) return;
 
     const currentFile = file;
-    setFile(null);
-    onOpenChange(false);
+    setIsUploading(true);
+    setUploadProgress(0);
 
     let toastId: string | number | undefined;
 
@@ -49,13 +86,13 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
       const ext = currentFile.name.split('.').pop()?.toLowerCase();
       if (ext !== 'csv' && ext !== 'docx') {
         toast.error("Unsupported file type. Please upload a .csv or .docx file.");
+        setIsUploading(false);
+        setUploadProgress(null);
         return;
       }
 
       const res = await api.post(`/projects/${projectId}/folders/${folderId}/uploads/presigned-url?ext=${ext}`);
       const { url, key: fullS3Key } = res.data.data;
-
-      toastId = toast.loading("Uploading file... 0%");
 
       await axios.put(url, currentFile, {
         headers: {
@@ -66,17 +103,20 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
             const percentCompleted = Math.round(
               (progressEvent.loaded * 100) / progressEvent.total
             );
-            toast.loading(`Uploading file... ${percentCompleted}%`, {
-              id: toastId,
-            });
+            setUploadProgress(percentCompleted);
           }
         },
       });
 
-      toast.loading("Processing file on server...", { id: toastId });
-      
+      setFile(null);
+      setUploadProgress(null);
+      setIsUploading(false);
+      onOpenChange(false);
+
+      toastId = toast.loading("Processing file...");
+
       const fileName = fullS3Key.split('/').pop() || '';
-      
+
       let isDone = false;
       let attempts = 0;
       let notFoundCount = 0;
@@ -89,11 +129,11 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
           notFoundCount = 0;
 
           if (job.status === "COMPLETED") {
-            toast.success("File upload and processing complete. Questions imported.", { id: toastId });
+            toast.success(job.errorMessage || "File upload and processing complete. Questions imported.", { id: toastId });
             isDone = true;
             onSuccess?.();
           } else if (job.status === "FAILED") {
-            toast.error("Processing failed on server.", {
+            toast.error("Processing failed.", {
               id: toastId,
               description: job.errorMessage || "An unknown error occurred",
             });
@@ -112,12 +152,14 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
           }
         }
       }
-      
+
       if (!isDone) {
         toast.error("Processing timed out.", { id: toastId });
       }
-      
+
     } catch (error) {
+      setIsUploading(false);
+      setUploadProgress(null);
       const axiosErr = error as AxiosError<ApiError>;
       toast.error("File upload failed.", {
         id: toastId,
@@ -136,6 +178,34 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
+          <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-2 text-blue-700 dark:text-blue-400">
+                <Info className="h-5 w-5" />
+                <h4 className="font-semibold text-sm">Upload Guidelines</h4>
+              </div>
+              <Button size="sm" variant="outline" className="h-8 text-xs bg-white dark:bg-zinc-950" onClick={handleDownloadTemplate}>
+                <FileDown className="mr-2 h-3.5 w-3.5" />
+                Download Template
+              </Button>
+            </div>
+            {isLoadingInstructions ? (
+              <div className="flex items-center space-x-2 text-sm text-blue-600/70 dark:text-blue-400/70">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Loading guidelines...</span>
+              </div>
+            ) : (
+              <ul className="space-y-1.5 text-xs text-blue-800/80 dark:text-blue-300/80">
+                {instructions.map((inst, idx) => (
+                  <li key={idx} className="flex items-start">
+                    <span className="mr-2 mt-0.5">•</span>
+                    <span>{inst.replace(/^\d+\.\s*/, '')}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
           <div className="flex flex-col items-center justify-center border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg p-6 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors">
             <UploadCloud className="h-10 w-10 text-muted-foreground mb-4" />
             <div className="space-y-1 text-center">
@@ -170,7 +240,7 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
             </Button>
             <Button onClick={handleUpload} disabled={!file || isUploading}>
               {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Upload
+              {isUploading && uploadProgress !== null ? `Uploading... ${uploadProgress}%` : "Upload"}
             </Button>
           </div>
         </div>

@@ -157,7 +157,7 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
             {row.original.name}
           </Link>
           {project?.quizFolderId === row.original.id && (
-            <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-medium">Active Quiz</span>
+            <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-medium">Active</span>
           )}
         </div>
       ),
@@ -178,9 +178,9 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
         return (
           <div className="flex justify-end space-x-2">
             {!isActive && (
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => makeActiveMutation.mutate(folder.id)}
                 disabled={makeActiveMutation.isPending}
               >
