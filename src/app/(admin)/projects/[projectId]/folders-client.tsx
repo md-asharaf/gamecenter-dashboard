@@ -1,8 +1,11 @@
 "use client";
 
+import { AxiosError } from "axios";
+import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Settings2, Trash2, Folder as FolderIcon, Trash, Eraser, ArrowLeft } from "lucide-react";
+import { Plus, Settings2, Trash2, Folder as FolderIcon, Eraser, ArrowLeft, Globe } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { ColumnDef } from "@tanstack/react-table";
@@ -87,9 +90,9 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
       toast.success("Folder deleted successfully.");
       setDeleteId(null);
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error("Failed to delete folder.", {
-        description: error.response?.data?.message || "An error occurred.",
+        description: getApiErrorMessage(error),
       });
       setDeleteId(null);
     },
@@ -103,9 +106,9 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
       toast.success("Folder emptied successfully.");
       setEmptyId(null);
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error("Failed to empty folder.", {
-        description: error.response?.data?.message || "An error occurred.",
+        description: getApiErrorMessage(error),
       });
       setEmptyId(null);
     },
@@ -122,6 +125,7 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
         numberOfQuestionsInQuiz: project.numberOfQuestionsInQuiz || 10,
         mainQuestionLabel: project.mainQuestionLabel || "field1",
         quizFolderId: folderId,
+        websiteUrl: project.websiteUrl,
       };
       await api.put(`/projects/${project.id}`, payload);
     },
@@ -129,9 +133,9 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
       queryClient.invalidateQueries({ queryKey: ["project", projectId] });
       toast.success("Active quiz folder updated.");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error("Failed to update active folder.", {
-        description: error.response?.data?.message || "An error occurred.",
+        description: getApiErrorMessage(error),
       });
     },
   });
@@ -211,11 +215,23 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">{project?.name || "Project"} Folders</h1>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-3xl font-bold tracking-tight truncate">{project?.name || "Project"} Folders</h1>
             <p className="text-muted-foreground mt-1">
               Organize questions into folders. Select an active quiz folder in project settings.
             </p>
+            {project?.websiteUrl && (
+              <a
+                href={project.websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 mt-2 text-sm text-primary hover:underline"
+                title="Open game website to verify before uploading questions"
+              >
+                <Globe className="h-3.5 w-3.5" />
+                <span className="truncate max-w-[300px]">View Game: {project.websiteUrl}</span>
+              </a>
+            )}
           </div>
         </div>
         <div className="flex w-full sm:w-auto space-x-2">

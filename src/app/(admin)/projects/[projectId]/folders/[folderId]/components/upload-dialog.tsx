@@ -31,6 +31,7 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const { data: instructionsData, isLoading: isLoadingInstructions } = useQuery({
     queryKey: ['uploadInstructions', projectId],
@@ -42,6 +43,33 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
   });
 
   const instructions = instructionsData || [];
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const droppedFile = e.dataTransfer.files[0];
+      const ext = droppedFile.name.split('.').pop()?.toLowerCase();
+      if (ext === 'csv' || ext === 'docx') {
+        setFile(droppedFile);
+      } else {
+        toast.error("Unsupported file type. Please upload a .csv or .docx file.");
+      }
+    }
+  };
 
   const handleDownloadTemplate = async () => {
     try {
@@ -55,7 +83,7 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
       document.body.appendChild(link);
       link.click();
       link.remove();
-    } catch (error) {
+    } catch {
       toast.error("Failed to download template.");
     }
   };
@@ -113,9 +141,16 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
       let isDone = false;
       let attempts = 0;
       let notFoundCount = 0;
-      while (!isDone && attempts < 60) {
+      while (!isDone && attempts < 90) {
         await new Promise((resolve) => setTimeout(resolve, 2000));
         attempts++;
+
+        if (attempts === 10) {
+          toast.loading("Parsing questions and saving to database...", { id: toastId });
+        } else if (attempts === 30) {
+          toast.loading("Still processing questions batch...", { id: toastId });
+        }
+
         try {
           const statusRes = await api.get(`/projects/${projectId}/folders/${folderId}/uploads/${fileName}/status`);
           const job = statusRes.data.data;
@@ -136,7 +171,7 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
           const axiosErr = pollError as AxiosError;
           if (axiosErr.response?.status === 404) {
             notFoundCount++;
-            if (notFoundCount >= 5) {
+            if (notFoundCount >= 8) {
               toast.error("Upload job not found. The file may not have been received by the server.", { id: toastId });
               isDone = true;
             }
@@ -147,7 +182,8 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
       }
 
       if (!isDone) {
-        toast.error("Processing timed out.", { id: toastId });
+        toast.info("Import is still processing in the background. Your questions will appear once processing completes.", { id: toastId });
+        onSuccess?.();
       }
 
     } catch (error) {
@@ -199,7 +235,16 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
             )}
           </div>
 
-          <div className="flex flex-col items-center justify-center border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg p-6 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors">
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 transition-colors ${
+              isDragging
+                ? "border-primary bg-primary/10"
+                : "border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+            }`}
+          >
             <UploadCloud className="h-10 w-10 text-muted-foreground mb-4" />
             <div className="space-y-1 text-center">
               <Label

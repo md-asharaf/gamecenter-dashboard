@@ -1,4 +1,5 @@
 "use client";
+"use no memo";
 
 import { useState } from "react";
 import {
@@ -40,7 +41,8 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
-  const table = useReactTable({
+  const table = // eslint-disable-next-line react-hooks/incompatible-library
+  useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),

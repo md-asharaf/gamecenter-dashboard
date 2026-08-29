@@ -1,13 +1,15 @@
 "use client";
+"use no memo";
+
 import { AxiosError } from "axios";
 import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2 } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import {
@@ -30,8 +32,6 @@ import {
 
 import { api } from "@/lib/api/axios";
 import { Project, CreateProjectRequest, UpdateProjectRequest } from "@/lib/types/project";
-import { getFolders } from "@/lib/api/folder";
-import { Folder, FolderPageResponse } from "@/lib/types/folder";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -40,6 +40,7 @@ const formSchema = z.object({
   field3Label: z.string().min(1, "Field 3 label is required"),
   numberOfQuestionsInQuiz: z.number().min(1).max(100),
   mainQuestionLabel: z.string(),
+  websiteUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -63,8 +64,12 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
       field3Label: "Hint",
       numberOfQuestionsInQuiz: 10,
       mainQuestionLabel: "field1",
+      websiteUrl: "",
     },
   });
+
+  const field1Label = useWatch({ control: form.control, name: "field1Label" }) || "Word";
+  const field2Label = useWatch({ control: form.control, name: "field2Label" }) || "Definition";
 
   useEffect(() => {
     if (project && open) {
@@ -75,6 +80,7 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
         field3Label: project.field3Label,
         numberOfQuestionsInQuiz: project.numberOfQuestionsInQuiz || 10,
         mainQuestionLabel: project.mainQuestionLabel || project.field1Label,
+        websiteUrl: project.websiteUrl || "",
       });
     } else if (!open) {
       form.reset({
@@ -84,6 +90,7 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
         field3Label: "Translation",
         numberOfQuestionsInQuiz: 10,
         mainQuestionLabel: "field1",
+        websiteUrl: "",
       });
     }
   }, [project, open, form]);
@@ -98,6 +105,7 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
           field3Label: values.field3Label,
           numberOfQuestionsInQuiz: values.numberOfQuestionsInQuiz || 10,
           mainQuestionLabel: values.mainQuestionLabel || "field1",
+          websiteUrl: values.websiteUrl || undefined,
         };
         const res = await api.put(`/projects/${project.id}`, payload);
         return res.data;
@@ -107,6 +115,7 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
           field1Label: values.field1Label,
           field2Label: values.field2Label,
           field3Label: values.field3Label,
+          websiteUrl: values.websiteUrl || undefined,
         };
         const res = await api.post("/projects", payload);
         return res.data;
@@ -173,22 +182,37 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
             )}
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="websiteUrl">Website / Game URL (Optional)</Label>
+            <Input id="websiteUrl" type="url" {...form.register("websiteUrl")} placeholder="https://example.com" />
+            {form.formState.errors.websiteUrl && (
+              <p className="text-sm text-red-500">{form.formState.errors.websiteUrl.message}</p>
+            )}
+            <p className="text-xs text-muted-foreground">URL where quizzes are played. Helps admins verify the game before uploading questions.</p>
+          </div>
+
           {isEditing && (
-              <div className="space-y-2">
-                <Label>Main Question Label</Label>
-                <Select
-                  onValueChange={(value) => form.setValue("mainQuestionLabel", value || "")}
-                  defaultValue={form.getValues("mainQuestionLabel") || ""}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select the main question label" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={form.watch("field1Label") || "field1"}>{form.watch("field1Label") || "Field 1"}</SelectItem>
-                    <SelectItem value={form.watch("field2Label") || "field2"}>{form.watch("field2Label") || "Field 2"}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label>Main Question Label</Label>
+              <Controller
+                control={form.control}
+                name="mainQuestionLabel"
+                render={({ field }) => (
+                  <Select
+                    value={field.value || field1Label || "field1"}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select the main question label" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={field1Label || "field1"}>{field1Label || "Field 1"}</SelectItem>
+                      <SelectItem value={field2Label || "field2"}>{field2Label || "Field 2"}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
           )}
 
           <div className="pt-4 flex justify-end space-x-2">

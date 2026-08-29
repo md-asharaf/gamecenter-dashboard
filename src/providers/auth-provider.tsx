@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     queryClient.clear();
-    window.location.href = "/login";
+    router.push("/login");
   };
 
   if (isLoading) {

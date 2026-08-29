@@ -60,7 +60,7 @@ api.interceptors.response.use(
       } catch (err) {
         processQueue(err);
         if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-          window.location.href = "/login";
+          window.location.replace("/login");
         }
         return Promise.reject(err);
       } finally {

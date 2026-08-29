@@ -4,7 +4,7 @@ import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Settings2, Trash2, Loader2 } from "lucide-react";
+import { Plus, Settings2, Trash2, Loader2, Globe } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { ColumnDef } from "@tanstack/react-table";
@@ -118,6 +118,20 @@ export function ProjectsClient() {
     {
       accessorKey: "field3Label",
       header: "Label 3",
+    },
+    {
+      id: "websiteUrl",
+      header: "Website / Game URL",
+      cell: ({ row }) => {
+        const url = row.original.websiteUrl;
+        if (!url) return <span className="text-muted-foreground">—</span>;
+        return (
+          <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary hover:underline text-sm">
+            <Globe className="h-3 w-3" />
+            <span className="truncate max-w-[200px]">{url}</span>
+          </a>
+        );
+      },
     },
     {
       id: "actions",

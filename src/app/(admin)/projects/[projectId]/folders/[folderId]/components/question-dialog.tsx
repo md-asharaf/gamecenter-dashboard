@@ -56,9 +56,9 @@ export function QuestionDialog({ open, onOpenChange, question, project, folderId
   useEffect(() => {
     if (question && open) {
       form.reset({
-        field1: question[project.field1Label] || "",
-        field2: project.field2Label ? question[project.field2Label] || "" : "",
-        field3: project.field3Label ? question[project.field3Label] || "" : "",
+        field1: (question[project.field1Label] as string) || "",
+        field2: project.field2Label ? (question[project.field2Label] as string) || "" : "",
+        field3: project.field3Label ? (question[project.field3Label] as string) || "" : "",
       });
     } else if (!open) {
       form.reset({

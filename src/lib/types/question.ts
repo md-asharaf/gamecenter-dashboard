@@ -3,7 +3,7 @@ export interface Question {
   folderId: string;
   createdAt: number;
   updatedAt: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface QuestionPageResponse {

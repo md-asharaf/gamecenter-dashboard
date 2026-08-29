@@ -1,9 +1,10 @@
 "use client";
+"use no memo";
 import { AxiosError } from "axios";
 import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
 
 import { useEffect } from "react";
-import { useForm, Controller, type Resolver } from "react-hook-form";
+import { useForm, Controller, useWatch, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2 } from "lucide-react";
@@ -77,6 +78,8 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
       projectIds: [],
     },
   });
+
+  const role = useWatch({ control: form.control, name: "role" }) || "SUB_ADMIN";
 
   useEffect(() => {
     if (user && open) {
@@ -193,7 +196,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
             />
           </div>
 
-          {form.watch("role") !== "SUPER_ADMIN" && (
+          {role !== "SUPER_ADMIN" && (
             <div className="space-y-2">
               <Label>Project Assignments</Label>
               <div className="rounded-md border border-zinc-200 dark:border-zinc-800 p-4">

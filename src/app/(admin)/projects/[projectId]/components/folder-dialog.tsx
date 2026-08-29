@@ -1,5 +1,7 @@
 "use client";
 
+import { AxiosError } from "axios";
+import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Folder, CreateFolderRequest, UpdateFolderRequest } from "@/lib/types/folder";
+import { Folder } from "@/lib/types/folder";
 import { createFolder, updateFolder } from "@/lib/api/folder";
 
 interface FolderDialogProps {
@@ -70,9 +72,9 @@ export function FolderDialog({ open, onOpenChange, folder, projectId }: FolderDi
       toast.success(isEditing ? "Folder updated successfully." : "Folder created successfully.");
       onOpenChange(false);
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(isEditing ? "Folder update failed." : "Folder creation failed.", {
-        description: error.response?.data?.message || "An unknown error occurred",
+        description: getApiErrorMessage(error),
       });
     },
   });

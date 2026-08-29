@@ -1,4 +1,5 @@
 "use client";
+"use no memo";
 
 import { useState, useEffect, useRef } from "react";
 import {
@@ -65,7 +66,8 @@ export function ServerDataTable<TData, TValue>({
     }
   }, [debouncedSearch]);
 
-  const table = useReactTable({
+  const table = // eslint-disable-next-line react-hooks/incompatible-library
+  useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
