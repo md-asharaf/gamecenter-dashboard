@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { User } from "@/lib/types/user";
 import { useGetMe, useLogout } from "@/lib/hooks/use-auth";
@@ -20,40 +20,35 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
 
   const { data: userData, isLoading: isAuthLoading } = useGetMe();
   const user = (userData as User) || null;
   const logoutMutation = useLogout();
-
   const isProtectedRoute = pathname !== "/login";
-  const isNavigating = 
-    (!isAuthLoading && isProtectedRoute && !user) || 
-    (!isAuthLoading && !isProtectedRoute && user);
 
   useEffect(() => {
     if (isAuthLoading) return;
 
     if (user && !isProtectedRoute) {
-      router.push("/");
+      window.location.href = "/";
     } else if (!user && isProtectedRoute) {
-      router.push("/login");
+      window.location.href = "/login";
     }
-  }, [user, isAuthLoading, isProtectedRoute, router]);
+  }, [user, isAuthLoading, isProtectedRoute]);
 
   useEffect(() => {
     const handleAuthExpired = () => {
-      queryClient.removeQueries({ queryKey: ["auth-user"] });
+      queryClient.setQueryData(["auth-user"], null);
       if (pathname !== "/login") {
-        router.push("/login");
+        window.location.href = "/login";
       }
     };
 
     window.addEventListener("auth-expired", handleAuthExpired);
     return () => window.removeEventListener("auth-expired", handleAuthExpired);
-  }, [pathname, router, queryClient]);
+  }, [pathname, queryClient]);
 
   const logout = async () => {
     try {
@@ -62,11 +57,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Logout failed on backend", e);
     }
 
-    queryClient.removeQueries({ queryKey: ["auth-user"] });
-    router.push("/login");
+    queryClient.setQueryData(["auth-user"], null);
+    window.location.href = "/login";
   };
 
-  if (isAuthLoading || isNavigating) {
+  if (isAuthLoading || (!user && isProtectedRoute)) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2 text-muted-foreground">

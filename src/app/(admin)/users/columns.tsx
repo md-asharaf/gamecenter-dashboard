@@ -37,7 +37,7 @@ export const getColumns = (
       header: () => <div className="text-right">Assigned Projects</div>,
       cell: ({ row }) => {
         const projectIds = row.getValue("projectIds") as string[];
-        if (!projectIds || projectIds.length === 0) return <div className="text-right mr-4 text-muted-foreground text-sm">None</div>;
+        if (row.getValue("role") !== "SUPER_ADMIN" && (!projectIds || projectIds.length === 0)) return <div className="text-right mr-4 text-muted-foreground text-sm">None</div>;
         return <div className="text-right mr-4">{row.getValue("role") == "SUPER_ADMIN" ? "All" : projectIds.length}</div>;
       },
     },
