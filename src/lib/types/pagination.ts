@@ -4,5 +4,5 @@ export interface PageResponse<T> {
   pageSize: number;
   totalElements: number;
   totalPages: number;
-  isLast: boolean;
+  last: boolean;
 }

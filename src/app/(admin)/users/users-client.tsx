@@ -94,7 +94,7 @@ export function UsersClient() {
         onNextPage={handleNextPage}
         onPrevPage={handlePrevPage}
         onPageChange={handlePageChange}
-        hasNextPage={!pageData?.isLast}
+        hasNextPage={!pageData?.last}
         hasPrevPage={currentPage > 0}
         isLoading={isFetching}
         currentPage={currentPage}

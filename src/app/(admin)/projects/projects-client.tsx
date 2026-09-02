@@ -94,7 +94,7 @@ export function ProjectsClient() {
         onNextPage={handleNextPage}
         onPrevPage={handlePrevPage}
         onPageChange={handlePageChange}
-        hasNextPage={!data?.isLast}
+        hasNextPage={!data?.last}
         hasPrevPage={currentPage > 0}
         isLoading={isFetching}
         currentPage={currentPage}

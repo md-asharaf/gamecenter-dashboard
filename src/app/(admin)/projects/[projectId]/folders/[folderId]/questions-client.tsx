@@ -163,7 +163,7 @@ export function QuestionsClient({ projectId, folderId, folder }: QuestionsClient
         onNextPage={handleNextPage}
         onPrevPage={handlePrevPage}
         onPageChange={handlePageChange}
-        hasNextPage={!pageData?.isLast}
+        hasNextPage={!pageData?.last}
         hasPrevPage={currentPage > 0}
         isLoading={isFetching}
         currentPage={currentPage}

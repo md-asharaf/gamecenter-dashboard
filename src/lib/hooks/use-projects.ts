@@ -17,7 +17,7 @@ export function useInfiniteProjects(limit: number = 10, search: string = "", sor
     queryFn: ({ pageParam = 0 }) => getProjects(pageParam, limit, search, sortBy, sortDir),
     initialPageParam: 0,
     getNextPageParam: (lastPage) => {
-      if (lastPage && !lastPage.isLast) {
+      if (lastPage && !lastPage.last) {
         return lastPage.pageNumber + 1;
       }
       return undefined;
