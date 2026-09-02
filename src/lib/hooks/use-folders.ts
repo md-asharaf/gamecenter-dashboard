@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getFolders, createFolder, updateFolder, deleteFolder, emptyFolder } from "../services/folder";
+import { getFolders, getFolder, createFolder, updateFolder, deleteFolder, emptyFolder } from "../services/folder";
 import { CreateFolderRequest, UpdateFolderRequest, Folder } from "../types/folder";
 
 export function useFolders(projectId: string, page: number = 0, limit: number = 10, search: string = "", sortBy: string = "createdAt", sortDir: string = "desc") {
@@ -91,5 +91,14 @@ export function useEmptyFolder(projectId: string) {
       queryClient.invalidateQueries({ queryKey: ["questions", projectId, folderId] });
       queryClient.invalidateQueries({ queryKey: ["dashboardStats"] });
     },
+  });
+}
+
+export function useFolder(projectId: string, folderId: string, initialData?: Folder | null) {
+  return useQuery({
+    queryKey: ["folder", folderId],
+    queryFn: () => getFolder(projectId, folderId),
+    initialData: initialData ? initialData : undefined,
+    staleTime: 0,
   });
 }

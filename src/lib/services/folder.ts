@@ -26,3 +26,8 @@ export async function emptyFolder(projectId: string, id: string): Promise<void> 
   const res = await api.post(`/projects/${projectId}/folders/${id}/empty`);
   return res.data;
 }
+
+export async function getFolder(projectId: string, id: string): Promise<Folder> {
+  const res = await api.get(`/projects/${projectId}/folders/${id}`);
+  return res.data;
+}

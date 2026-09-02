@@ -2,7 +2,6 @@ import { dehydrate, HydrationBoundary } from '@tanstack/react-query'
 import { getQueryClient } from '@/lib/api/client'
 import { createServerApi } from '@/lib/api/api-server'
 import { FoldersClient } from './folders-client'
-import { Project } from '@/lib/types/project'
 
 export default async function FoldersPage({
   params,
@@ -22,13 +21,17 @@ export default async function FoldersPage({
     },
   })
 
-  const projectRes = await api.get(`/projects`).catch(() => null)
-  const projectList = projectRes?.data?.data?.items || []
-  const project = projectList.find((p: Project) => p.id === projectId) || null
+  await queryClient.prefetchQuery({
+    queryKey: ['project', projectId],
+    queryFn: async () => {
+      const res = await api.get(`/projects/${projectId}`)
+      return res.data
+    },
+  })
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <FoldersClient projectId={projectId} project={project} />
+      <FoldersClient projectId={projectId} />
     </HydrationBoundary>
   )
 }

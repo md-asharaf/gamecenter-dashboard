@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/breadcrumb";
 
 import { Button } from "@/components/ui/button";
-import { Project } from "@/lib/types/project";
 import { Folder } from "@/lib/types/folder";
 import { useFolders, useDeleteFolder, useEmptyFolder } from "@/lib/hooks/use-folders";
 import { useProject, useUpdateProject } from "@/lib/hooks/use-projects";
@@ -26,9 +25,8 @@ import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import { useTablePagination } from "@/hooks/use-table-pagination";
 import { getColumns } from "./columns";
 
-export function FoldersClient({ projectId, project: initialProject }: { projectId: string; project?: Project | null }) {
-  const { data: projectData } = useProject(projectId, initialProject || undefined);
-  const project = projectData ?? initialProject;
+export function FoldersClient({ projectId }: { projectId: string }) {
+  const { data: project } = useProject(projectId);
 
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
@@ -147,26 +145,26 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
-      
+
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex-1 min-w-0">
           <h1 className="text-3xl font-bold tracking-tight truncate">{project?.name || "Project"} Folders</h1>
           <p className="text-muted-foreground mt-1">
-              Organize questions into folders. Select an active quiz folder in project settings.
-            </p>
-            {project?.websiteUrl && (
-              <a
-                href={project.websiteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 mt-2 text-sm text-primary hover:underline"
-                title="Open game website to verify before uploading questions"
-              >
-                <Globe className="h-3.5 w-3.5" />
-                <span className="truncate max-w-[300px]">View Game: {project.websiteUrl}</span>
-              </a>
-            )}
-          </div>
+            Organize questions into folders. Select an active quiz folder in project settings.
+          </p>
+          {project?.websiteUrl && (
+            <a
+              href={project.websiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 mt-2 text-sm text-primary hover:underline"
+              title="Open game website to verify before uploading questions"
+            >
+              <Globe className="h-3.5 w-3.5" />
+              <span className="truncate max-w-[300px]">View Game: {project.websiteUrl}</span>
+            </a>
+          )}
+        </div>
         <div className="flex flex-wrap w-full sm:w-auto gap-2 mt-4 sm:mt-0">
           <Button className="flex-1 sm:flex-none" onClick={handleCreate}>
             <Plus className="mr-2 h-4 w-4" /> Create Folder

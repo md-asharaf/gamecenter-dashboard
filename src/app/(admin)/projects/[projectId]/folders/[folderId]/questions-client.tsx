@@ -23,21 +23,22 @@ import { getColumns } from "./columns";
 
 import { AxiosError } from "axios";
 import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
-import { Folder } from "@/lib/types/folder";
 import { useQueryClient } from "@tanstack/react-query";
 import { useProject } from "@/lib/hooks/use-projects";
+import { useFolder } from "@/lib/hooks/use-folders";
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 
 interface QuestionsClientProps {
   projectId: string;
   folderId: string;
-  folder?: Folder | null;
 }
 
-export function QuestionsClient({ projectId, folderId, folder }: QuestionsClientProps) {
+export function QuestionsClient({ projectId, folderId }: QuestionsClientProps) {
   const queryClient = useQueryClient();
   const { data: projectData } = useProject(projectId);
   const project = projectData;
+
+  const { data: folder } = useFolder(projectId, folderId);
 
   const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
