@@ -25,12 +25,10 @@ export function useInfiniteProjects(limit: number = 10, search: string = "", sor
   });
 }
 
-export function useProject(id: string, initialData?: Project) {
+export function useProject(id: string) {
   return useQuery({
     queryKey: ["project", id],
     queryFn: () => getProject(id),
-    initialData: initialData ? initialData : undefined,
-    staleTime: 0,
   });
 }
 

@@ -94,12 +94,12 @@ export default function OverviewPage() {
           >
             <Card className="glass-card h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Sub-Admins</CardTitle>
+                <CardTitle className="text-sm font-medium">Admins</CardTitle>
                 <ShieldCheck className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats?.totalAdmins}</div>
-                <p className="text-xs text-muted-foreground">Active sub-admins</p>
+                <p className="text-xs text-muted-foreground">Active admins</p>
               </CardContent>
             </Card>
           </motion.div>

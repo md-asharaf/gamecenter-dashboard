@@ -27,7 +27,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useProject } from "@/lib/hooks/use-projects";
 import { useFolder } from "@/lib/hooks/use-folders";
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
-import { Folder } from "@/lib/types/folder";
 
 interface QuestionsClientProps {
   projectId: string;

@@ -1,7 +1,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Project } from "@/lib/types/project";
 import { Button } from "@/components/ui/button";
-import { Settings2, Trash2, FolderOpen, ArrowUpDown } from "lucide-react";
+import { Settings2, Trash2, FolderOpen, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import Link from "next/link";
 
 export const getColumns = (
@@ -11,13 +11,14 @@ export const getColumns = (
   {
     accessorKey: "name",
     header: ({ column }) => {
+      const isSorted = column.getIsSorted();
       return (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          onClick={() => column.toggleSorting(isSorted === "asc")}
         >
           Project Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          {isSorted === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : isSorted === "desc" ? <ArrowDown className="ml-2 h-4 w-4" /> : <ArrowUpDown className="ml-2 h-4 w-4" />}
         </Button>
       )
     },
@@ -30,14 +31,15 @@ export const getColumns = (
   {
     accessorKey: "createdAt",
     header: ({ column }) => {
+      const isSorted = column.getIsSorted();
       return (
         <div className="flex justify-end">
           <Button
             variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            onClick={() => column.toggleSorting(isSorted === "asc")}
           >
             Created At
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            {isSorted === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : isSorted === "desc" ? <ArrowDown className="ml-2 h-4 w-4" /> : <ArrowUpDown className="ml-2 h-4 w-4" />}
           </Button>
         </div>
       )

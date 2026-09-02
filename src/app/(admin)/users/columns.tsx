@@ -2,7 +2,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { User } from "@/lib/types/user";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Settings2, Trash2, ArrowUpDown } from "lucide-react";
+import { Settings2, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 export const getColumns = (
   onEdit: (user: User) => void,
@@ -11,13 +11,14 @@ export const getColumns = (
     {
       accessorKey: "email",
       header: ({ column }) => {
+        const isSorted = column.getIsSorted();
         return (
           <Button
             variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            onClick={() => column.toggleSorting(isSorted === "asc")}
           >
             Email
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            {isSorted === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : isSorted === "desc" ? <ArrowDown className="ml-2 h-4 w-4" /> : <ArrowUpDown className="ml-2 h-4 w-4" />}
           </Button>
         )
       },

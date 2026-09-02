@@ -46,11 +46,11 @@ export function UsersClient() {
   const handleDelete = (id: string) => {
     deleteMutation.mutate(id, {
       onSuccess: () => {
-        toast.success("Sub-admin deleted successfully.");
+        toast.success("Admin deleted successfully.");
         setDeleteId(null);
       },
       onError: (error) => {
-        toast.error("Failed to delete sub-admin.", {
+        toast.error("Failed to delete admin.", {
           description: getApiErrorMessage(error as AxiosError<ApiError>),
         });
         setDeleteId(null);
@@ -78,11 +78,11 @@ export function UsersClient() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Admins</h1>
           <p className="text-muted-foreground mt-1">
-            Manage sub-admins and their project access.
+            Manage admins and their project access.
           </p>
         </div>
         <Button onClick={handleCreate}>
-          <Plus className="mr-2 h-4 w-4" /> Add Sub-Admin
+          <Plus className="mr-2 h-4 w-4" /> Add Admin
         </Button>
       </div>
 
@@ -122,7 +122,7 @@ export function UsersClient() {
           if (deleteId) handleDelete(deleteId);
         }}
         isPending={deleteMutation.isPending}
-        description="This will permanently delete this sub-admin account. They will lose access to all assigned projects immediately."
+        description="This will permanently delete this admin account. They will lose access to all assigned projects immediately."
       />
     </div>
   );

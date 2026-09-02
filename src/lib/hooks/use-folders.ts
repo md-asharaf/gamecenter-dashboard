@@ -94,11 +94,9 @@ export function useEmptyFolder(projectId: string) {
   });
 }
 
-export function useFolder(projectId: string, folderId: string, initialData?: Folder | null) {
+export function useFolder(projectId: string, folderId: string) {
   return useQuery({
     queryKey: ["folder", folderId],
     queryFn: () => getFolder(projectId, folderId),
-    initialData: initialData ? initialData : undefined,
-    staleTime: 0,
   });
 }

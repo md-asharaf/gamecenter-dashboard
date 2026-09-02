@@ -73,9 +73,9 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
   const [search, setSearch] = useState("");
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const debouncedSearch = useDebounce(search, 300);
-  
-  const { 
-    data: projectsData, 
+
+  const {
+    data: projectsData,
     isLoading: projectsLoading,
     fetchNextPage,
     hasNextPage,
@@ -128,11 +128,11 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
     if (isEditing) {
       updateMutation.mutate(payload, {
         onSuccess: () => {
-          toast.success("Sub-admin updated successfully.");
+          toast.success("Admin updated successfully.");
           onOpenChange(false);
         },
         onError: (error) => {
-          toast.error("Failed to update sub-admin.", {
+          toast.error("Failed to update admin.", {
             description: getApiErrorMessage(error as AxiosError<ApiError>),
           });
         },
@@ -140,11 +140,11 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
     } else {
       createMutation.mutate(payload, {
         onSuccess: () => {
-          toast.success("Sub-admin created successfully.");
+          toast.success("Admin created successfully.");
           onOpenChange(false);
         },
         onError: (error) => {
-          toast.error("Failed to create sub-admin.", {
+          toast.error("Failed to create admin.", {
             description: getApiErrorMessage(error as AxiosError<ApiError>),
           });
         },
