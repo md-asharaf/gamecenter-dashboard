@@ -132,7 +132,7 @@ export function QuestionsClient({ projectId, folderId, folder }: QuestionsClient
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{folder?.name + " Questions" || "Questions"}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{folder?.name ? `${folder.name} Questions` : "Questions"}</h1>
           <p className="text-muted-foreground mt-1">
             Manage questions and entries for this project.
           </p>
