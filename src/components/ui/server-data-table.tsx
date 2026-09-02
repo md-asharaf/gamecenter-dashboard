@@ -126,6 +126,9 @@ export function ServerDataTable<TData, TValue>({
     });
 
   const showPageInfo = totalPages !== undefined && currentPage !== undefined;
+  
+  const computedHasNextPage = totalPages !== undefined && currentPage !== undefined ? currentPage < totalPages - 1 : hasNextPage;
+  const computedHasPrevPage = currentPage !== undefined ? currentPage > 0 : hasPrevPage;
 
   const renderPaginationItems = () => {
     if (totalPages === undefined || currentPage === undefined || !onPageChange) return null;
@@ -321,7 +324,7 @@ export function ServerDataTable<TData, TValue>({
             variant="outline"
             className="h-8 px-4 hidden sm:inline-flex"
             onClick={() => onPrevPage?.()}
-            disabled={!hasPrevPage || isLoading}
+            disabled={!computedHasPrevPage || isLoading}
           >
             Previous
           </Button>
@@ -336,7 +339,7 @@ export function ServerDataTable<TData, TValue>({
             variant="outline"
             className="h-8 px-4 hidden sm:inline-flex"
             onClick={() => onNextPage?.()}
-            disabled={!hasNextPage || isLoading}
+            disabled={!computedHasNextPage || isLoading}
           >
             Next
           </Button>
@@ -346,7 +349,7 @@ export function ServerDataTable<TData, TValue>({
             variant="outline"
             className="h-8 px-4 sm:hidden"
             onClick={() => onPrevPage?.()}
-            disabled={!hasPrevPage || isLoading}
+            disabled={!computedHasPrevPage || isLoading}
           >
             Prev
           </Button>
@@ -354,7 +357,7 @@ export function ServerDataTable<TData, TValue>({
             variant="outline"
             className="h-8 px-4 sm:hidden"
             onClick={() => onNextPage?.()}
-            disabled={!hasNextPage || isLoading}
+            disabled={!computedHasNextPage || isLoading}
           >
             Next
           </Button>
