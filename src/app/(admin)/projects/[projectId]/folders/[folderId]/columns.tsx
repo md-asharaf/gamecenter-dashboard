@@ -56,6 +56,26 @@ export const getColumns = (
     ),
   },
   {
+    accessorKey: "answer",
+    header: ({ column }) => {
+      const isSorted = column.getIsSorted();
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(isSorted === "asc")}
+        >
+          Answer
+          {isSorted === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : isSorted === "desc" ? <ArrowDown className="ml-2 h-4 w-4" /> : <ArrowUpDown className="ml-2 h-4 w-4" />}
+        </Button>
+      )
+    },
+    cell: ({ row }) => (
+      <div className="ml-4 max-w-[200px] truncate" title={row.getValue("answer")}>
+        {row.getValue("answer")}
+      </div>
+    ),
+  },
+  {
     accessorKey: "options",
     header: "Options",
     cell: ({ row }) => {
@@ -65,47 +85,13 @@ export const getColumns = (
     },
   },
   {
-    accessorKey: "difficulty",
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted();
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(isSorted === "asc")}
-        >
-          Difficulty
-          {isSorted === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : isSorted === "desc" ? <ArrowDown className="ml-2 h-4 w-4" /> : <ArrowUpDown className="ml-2 h-4 w-4" />}
-        </Button>
-      )
-    },
+    accessorKey: "hint",
+    header: "Hint",
     cell: ({ row }) => {
-      const diff = row.getValue("difficulty") as string;
-      const getBadgeVariant = () => {
-        switch (diff) {
-          case "EASY": return "secondary";
-          case "MEDIUM": return "default";
-          case "HARD": return "destructive";
-          default: return "outline";
-        }
-      };
-      return <Badge variant={getBadgeVariant()} className="ml-4">{diff}</Badge>;
+      const hint = row.getValue("hint") as string | undefined;
+      if (!hint) return <span className="text-muted-foreground text-sm">—</span>;
+      return <div className="text-muted-foreground max-w-[150px] truncate" title={hint}>{hint}</div>;
     },
-  },
-  {
-    accessorKey: "type",
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted();
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(isSorted === "asc")}
-        >
-          Type
-          {isSorted === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : isSorted === "desc" ? <ArrowDown className="ml-2 h-4 w-4" /> : <ArrowUpDown className="ml-2 h-4 w-4" />}
-        </Button>
-      )
-    },
-    cell: ({ row }) => <div className="ml-4">{row.getValue("type")}</div>,
   },
   {
     accessorKey: "createdAt",
