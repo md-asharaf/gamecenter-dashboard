@@ -1,7 +1,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Question } from "@/lib/types/question";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Settings2, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 export const getColumns = (
@@ -11,18 +11,26 @@ export const getColumns = (
   {
     id: "select",
     header: ({ table }) => (
-      <Checkbox
-        checked={table.getIsAllPageRowsSelected()}
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
+      <div className="px-1 w-[40px]">
+        <input
+          type="checkbox"
+          className="rounded border-zinc-300 dark:border-zinc-700 bg-transparent"
+          checked={table.getIsAllPageRowsSelected()}
+          onChange={(e) => table.toggleAllPageRowsSelected(!!e.target.checked)}
+          aria-label="Select all"
+        />
+      </div>
     ),
     cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
+      <div className="px-1">
+        <input
+          type="checkbox"
+          className="rounded border-zinc-300 dark:border-zinc-700 bg-transparent"
+          checked={row.getIsSelected()}
+          onChange={(e) => row.toggleSelected(!!e.target.checked)}
+          aria-label="Select row"
+        />
+      </div>
     ),
     enableSorting: false,
     enableHiding: false,
@@ -41,10 +49,23 @@ export const getColumns = (
         </Button>
       )
     },
-    cell: ({ row }) => <span className="font-medium ml-4 max-w-[200px] sm:max-w-[300px] lg:max-w-[400px] truncate block" title={row.original.question}>{row.original.question || "—"}</span>,
+    cell: ({ row }) => (
+      <div className="font-medium ml-4 max-w-[250px] truncate" title={row.getValue("question")}>
+        {row.getValue("question")}
+      </div>
+    ),
   },
   {
-    accessorKey: "answer",
+    accessorKey: "options",
+    header: "Options",
+    cell: ({ row }) => {
+      const options = row.getValue("options") as string[] | undefined;
+      if (!options || options.length === 0) return <span className="text-muted-foreground text-sm">None</span>;
+      return <Badge variant="secondary">{options.length} options</Badge>;
+    },
+  },
+  {
+    accessorKey: "difficulty",
     header: ({ column }) => {
       const isSorted = column.getIsSorted();
       return (
@@ -52,17 +73,57 @@ export const getColumns = (
           variant="ghost"
           onClick={() => column.toggleSorting(isSorted === "asc")}
         >
-          Answer
+          Difficulty
           {isSorted === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : isSorted === "desc" ? <ArrowDown className="ml-2 h-4 w-4" /> : <ArrowUpDown className="ml-2 h-4 w-4" />}
         </Button>
       )
     },
-    cell: ({ row }) => <span className="ml-4 max-w-[150px] sm:max-w-[250px] truncate block" title={row.original.answer}>{row.original.answer || "—"}</span>,
+    cell: ({ row }) => {
+      const diff = row.getValue("difficulty") as string;
+      const getBadgeVariant = () => {
+        switch (diff) {
+          case "EASY": return "secondary";
+          case "MEDIUM": return "default";
+          case "HARD": return "destructive";
+          default: return "outline";
+        }
+      };
+      return <Badge variant={getBadgeVariant()} className="ml-4">{diff}</Badge>;
+    },
   },
   {
-    accessorKey: "hint",
-    header: "Hint",
-    cell: ({ row }) => <span className="text-muted-foreground max-w-[150px] truncate block" title={row.original.hint || ""}>{row.original.hint || "—"}</span>,
+    accessorKey: "type",
+    header: ({ column }) => {
+      const isSorted = column.getIsSorted();
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(isSorted === "asc")}
+        >
+          Type
+          {isSorted === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : isSorted === "desc" ? <ArrowDown className="ml-2 h-4 w-4" /> : <ArrowUpDown className="ml-2 h-4 w-4" />}
+        </Button>
+      )
+    },
+    cell: ({ row }) => <div className="ml-4">{row.getValue("type")}</div>,
+  },
+  {
+    accessorKey: "createdAt",
+    header: ({ column }) => {
+      const isSorted = column.getIsSorted();
+      return (
+        <div className="flex justify-end">
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(isSorted === "asc")}
+          >
+            Created At
+            {isSorted === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : isSorted === "desc" ? <ArrowDown className="ml-2 h-4 w-4" /> : <ArrowUpDown className="ml-2 h-4 w-4" />}
+          </Button>
+        </div>
+      )
+    },
+    cell: ({ row }) => <div className="text-right mr-4">{new Date(row.getValue("createdAt")).toLocaleString()}</div>,
   },
   {
     id: "actions",

@@ -3,10 +3,10 @@ import { AxiosError } from "axios";
 import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -20,12 +20,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateQuestion, useUpdateQuestion } from "@/lib/hooks/use-questions";
-import { Question } from "@/lib/types/question";
+import { Question, CreateQuestionRequest } from "@/lib/types/question";
 
 const formSchema = z.object({
   question: z.string().min(1, "Question is required"),
   answer: z.string().min(1, "Answer is required"),
   hint: z.string().optional(),
+  options: z.array(z.object({ value: z.string().min(1, "Option cannot be empty") })).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -46,7 +47,13 @@ export function QuestionDialog({ open, onOpenChange, question, projectId, folder
       question: "",
       answer: "",
       hint: "",
+      options: [],
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "options",
   });
 
   useEffect(() => {
@@ -55,9 +62,10 @@ export function QuestionDialog({ open, onOpenChange, question, projectId, folder
         question: question.question || "",
         answer: question.answer || "",
         hint: question.hint || "",
+        options: question.options ? question.options.map((opt) => ({ value: opt })) : [],
       });
     } else if (!open) {
-      form.reset({ question: "", answer: "", hint: "" });
+      form.reset({ question: "", answer: "", hint: "", options: [] });
     }
   }, [question, open, form]);
 
@@ -67,8 +75,15 @@ export function QuestionDialog({ open, onOpenChange, question, projectId, folder
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   const onSubmit = (values: FormValues) => {
+    const payload = {
+      question: values.question,
+      answer: values.answer,
+      hint: values.hint,
+      options: values.options ? values.options.map((opt) => opt.value) : [],
+    };
+
     if (isEditing) {
-      updateMutation.mutate(values, {
+      updateMutation.mutate(payload, {
         onSuccess: () => {
           toast.success("Question updated successfully.");
           onOpenChange(false);
@@ -80,7 +95,7 @@ export function QuestionDialog({ open, onOpenChange, question, projectId, folder
         },
       });
     } else {
-      createMutation.mutate(values, {
+      createMutation.mutate(payload, {
         onSuccess: () => {
           toast.success("Question created successfully.");
           onOpenChange(false);
@@ -96,7 +111,7 @@ export function QuestionDialog({ open, onOpenChange, question, projectId, folder
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Edit Question" : "Add Question"}</DialogTitle>
           <DialogDescription>
@@ -115,6 +130,48 @@ export function QuestionDialog({ open, onOpenChange, question, projectId, folder
           <div className="space-y-2">
             <Label htmlFor="answer">Answer</Label>
             <Input id="answer" {...form.register("answer")} />
+            {form.formState.errors.answer && (
+              <p className="text-sm text-red-500">{form.formState.errors.answer.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Options <span className="text-muted-foreground text-xs">(for multiple choice)</span></Label>
+            <div className="space-y-2">
+              {fields.map((field, index) => (
+                <div key={field.id} className="flex items-center space-x-2">
+                  <div className="flex-1">
+                    <Input
+                      {...form.register(`options.${index}.value` as const)}
+                      placeholder={`Option ${index + 1}`}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => remove(index)}
+                    className="h-9 w-9 text-muted-foreground hover:text-red-500"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => append({ value: "" })}
+                className="mt-2 text-xs"
+              >
+                <Plus className="h-3 w-3 mr-1" /> Add Option
+              </Button>
+            </div>
+            {form.formState.errors.options && (
+              <p className="text-sm text-red-500">
+                {form.formState.errors.options.message || form.formState.errors.options.root?.message}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
