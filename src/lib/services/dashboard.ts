@@ -9,5 +9,5 @@ export interface DashboardStats {
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   const res = await api.get("/dashboard/stats");
-  return res.data.data;
+  return res.data;
 }

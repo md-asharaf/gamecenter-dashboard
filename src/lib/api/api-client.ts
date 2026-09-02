@@ -34,7 +34,12 @@ const processQueue = (error: unknown) => {
 const SKIP_REFRESH_URLS = ["/auth/login", "/auth/refresh"];
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.data && response.data.data !== undefined) {
+      response.data = response.data.data;
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
     const requestUrl: string = originalRequest.url || "";
