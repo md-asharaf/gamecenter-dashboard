@@ -33,9 +33,9 @@ export function useUpdateFolder(projectId: string, folderId: string) {
       const previousFolders = queryClient.getQueriesData({ queryKey: ["folders", projectId] });
 
       if (previousFolder) {
-        queryClient.setQueryData(["folder", folderId], (old: { data?: Folder } | undefined) => {
+        queryClient.setQueryData(["folder", folderId], (old: Folder | undefined) => {
           if (!old) return old;
-          return { ...old, data: { ...old.data, ...newFolder } as Folder };
+          return { ...old, ...newFolder } as Folder;
         });
       }
 

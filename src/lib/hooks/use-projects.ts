@@ -57,9 +57,9 @@ export function useUpdateProject(id: string) {
       const previousProjects = queryClient.getQueriesData({ queryKey: ["projects"] });
 
       if (previousProject) {
-        queryClient.setQueryData(["project", id], (old: { data?: Project } | undefined) => {
+        queryClient.setQueryData(["project", id], (old: Project | undefined) => {
           if (!old) return old;
-          return { ...old, data: { ...old.data, ...newProject } as Project };
+          return { ...old, ...newProject } as Project;
         });
       }
 
