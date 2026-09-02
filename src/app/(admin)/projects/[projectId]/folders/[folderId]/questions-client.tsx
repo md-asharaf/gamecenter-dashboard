@@ -32,16 +32,12 @@ import { Folder } from "@/lib/types/folder";
 interface QuestionsClientProps {
   projectId: string;
   folderId: string;
-  folder?: Folder | null;
 }
 
-export function QuestionsClient({ projectId, folderId, folder: initialFolder }: QuestionsClientProps) {
+export function QuestionsClient({ projectId, folderId }: QuestionsClientProps) {
   const queryClient = useQueryClient();
-  const { data: projectData } = useProject(projectId);
-  const project = projectData;
-
-  const { data: folderData } = useFolder(projectId, folderId, initialFolder);
-  const folder = folderData;
+  const { data: project } = useProject(projectId);
+  const { data: folder } = useFolder(projectId, folderId);
 
   const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);

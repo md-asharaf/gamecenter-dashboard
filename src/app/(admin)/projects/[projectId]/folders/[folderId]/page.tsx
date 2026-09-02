@@ -14,19 +14,24 @@ export default async function QuestionsPage({
   const api = await createServerApi()
 
   await queryClient.prefetchQuery({
-    queryKey: ['questions', projectId, folderId],
+    queryKey: ['questions', projectId, folderId, 0, 10, "", "createdAt", "desc"],
     queryFn: async () => {
-      const res = await api.get(`/projects/${projectId}/folders/${folderId}/questions?page=0&limit=10&sortBy=createdAt&sortDir=desc`)
+      const res = await api.get(`/projects/${projectId}/folders/${folderId}/questions?page=0&limit=10&search=&sortBy=createdAt&sortDir=desc`)
       return res.data
     },
   })
 
-  const folderRes = await api.get(`/projects/${projectId}/folders/${folderId}`).catch(() => null)
-  const folder = folderRes?.data || null
+  await queryClient.prefetchQuery({
+    queryKey: ['folder', folderId],
+    queryFn: async () => {
+      const res = await api.get(`/projects/${projectId}/folders/${folderId}`)
+      return res.data
+    },
+  })
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <QuestionsClient projectId={projectId} folderId={folderId} folder={folder} />
+      <QuestionsClient projectId={projectId} folderId={folderId} />
     </HydrationBoundary>
   )
 }
