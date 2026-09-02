@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { UserNav } from "@/components/user-nav";
+import { CommandPalette } from "@/components/command-palette";
 
 export default function AdminLayout({
   children,
@@ -19,6 +20,7 @@ export default function AdminLayout({
           {children}
         </main>
       </SidebarInset>
+      <CommandPalette />
     </SidebarProvider>
   );
 }
