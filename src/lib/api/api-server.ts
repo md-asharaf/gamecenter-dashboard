@@ -15,6 +15,18 @@ export const createServerApi = async () => {
     withCredentials: true,
   });
 
+  instance.interceptors.response.use(
+    (response) => {
+      if (response.data && response.data.data !== undefined) {
+        response.data = response.data.data;
+      }
+      return response;
+    },
+    (error) => {
+      return Promise.reject(error);
+    }
+  );
+
   if (token) {
     instance.defaults.headers.Cookie = `admin_token=${token}`;
   }

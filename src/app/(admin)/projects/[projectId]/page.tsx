@@ -18,7 +18,7 @@ export default async function FoldersPage({
     queryKey: ['folders', projectId],
     queryFn: async () => {
       const res = await api.get(`/projects/${projectId}/folders`)
-      return res.data.data
+      return res.data
     },
   })
 
