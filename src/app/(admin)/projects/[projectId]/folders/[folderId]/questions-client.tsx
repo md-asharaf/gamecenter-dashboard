@@ -27,18 +27,21 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useProject } from "@/lib/hooks/use-projects";
 import { useFolder } from "@/lib/hooks/use-folders";
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+import { Folder } from "@/lib/types/folder";
 
 interface QuestionsClientProps {
   projectId: string;
   folderId: string;
+  folder?: Folder | null;
 }
 
-export function QuestionsClient({ projectId, folderId }: QuestionsClientProps) {
+export function QuestionsClient({ projectId, folderId, folder: initialFolder }: QuestionsClientProps) {
   const queryClient = useQueryClient();
   const { data: projectData } = useProject(projectId);
   const project = projectData;
 
-  const { data: folder } = useFolder(projectId, folderId);
+  const { data: folderData } = useFolder(projectId, folderId, initialFolder);
+  const folder = folderData;
 
   const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);

@@ -21,16 +21,12 @@ export default async function QuestionsPage({
     },
   })
 
-  await queryClient.prefetchQuery({
-    queryKey: ['folder', folderId],
-    queryFn: async () => {
-      const res = await api.get(`/projects/${projectId}/folders/${folderId}`)
-      return res.data
-    },
-  })
+  const folderRes = await api.get(`/projects/${projectId}/folders/${folderId}`).catch(() => null)
+  const folder = folderRes?.data || null
+
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <QuestionsClient projectId={projectId} folderId={folderId} />
+      <QuestionsClient projectId={projectId} folderId={folderId} folder={folder} />
     </HydrationBoundary>
   )
 }

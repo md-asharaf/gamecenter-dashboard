@@ -47,7 +47,7 @@ export default function LoginPage() {
     loginMutation.mutate(values, {
       onSuccess: () => {
         toast.success("Welcome back!", { description: "Login successful." });
-        router.push("/projects");
+        window.location.href = "/projects";
       },
       onError: (error: Error) => {
         const axiosError = error as AxiosError<ApiError>;
