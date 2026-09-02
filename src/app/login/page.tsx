@@ -19,8 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { api } from "@/lib/api/axios";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLogin } from "@/lib/hooks/use-auth";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -34,8 +33,6 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
 
-  const queryClient = useQueryClient();
-
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -44,28 +41,20 @@ export default function LoginPage() {
     },
   });
 
-  const loginMutation = useMutation({
-    mutationFn: async (values: LoginFormValues) => {
-      const response = await api.post("/auth/login", values);
-      return response.data;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["auth-user"] });
-      toast.success("Welcome back!", {
-        description: "Login successful.",
-      });
-      router.push("/projects");
-    },
-    onError: (error: AxiosError<ApiError>) => {
-      const message = error.response?.data?.error || "Invalid email or password.";
-      toast.error("Login failed.", {
-        description: message,
-      });
-    },
-  });
+  const loginMutation = useLogin();
 
   const onSubmit = (values: LoginFormValues) => {
-    loginMutation.mutate(values);
+    loginMutation.mutate(values, {
+      onSuccess: () => {
+        toast.success("Welcome back!", { description: "Login successful." });
+        router.push("/projects");
+      },
+      onError: (error: Error) => {
+        const axiosError = error as AxiosError<ApiError>;
+        const message = axiosError.response?.data?.error || "Invalid email or password.";
+        toast.error("Login failed.", { description: message });
+      },
+    });
   };
 
   return (

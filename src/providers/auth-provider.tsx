@@ -1,10 +1,10 @@
 "use client";
 
-import React, { createContext, useContext, useEffect } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { User } from "@/lib/types/user";
-import { api } from "@/lib/api/axios";
+import { useGetMe, useLogout } from "@/lib/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 
 interface AuthContextType {
@@ -23,39 +23,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
-  const { data: user = null, isLoading, isError } = useQuery({
-    queryKey: ['auth-user'],
-    queryFn: async () => {
-      const res = await api.get("/admins/me");
-      return res.data.data as User;
-    },
-    retry: false,
-    staleTime: Infinity,
-  });
+  const { data: userData, isLoading } = useGetMe();
+  const user = (userData?.data as User) || null;
+  const logoutMutation = useLogout();
 
   useEffect(() => {
     if (isLoading) return;
 
     if (user && pathname === "/login") {
+      setTimeout(() => setIsRedirecting(true), 0);
       router.push("/");
-    } else if (isError && pathname !== "/login") {
-      router.push("/login");
     }
-  }, [user, isError, isLoading, pathname, router]);
+  }, [user, isLoading, pathname, router]);
+
+  useEffect(() => {
+    const handleAuthExpired = () => {
+      if (pathname !== "/login") {
+        setIsRedirecting(true);
+        queryClient.removeQueries({ queryKey: ["auth-user"] });
+        router.push("/login");
+      }
+    };
+
+    window.addEventListener("auth-expired", handleAuthExpired);
+    return () => window.removeEventListener("auth-expired", handleAuthExpired);
+  }, [pathname, router, queryClient]);
 
   const logout = async () => {
     try {
-      await api.post("/auth/logout");
+      await logoutMutation.mutateAsync();
     } catch (e) {
       console.error("Logout failed on backend", e);
     }
 
-    queryClient.clear();
+    setIsRedirecting(true);
+    queryClient.removeQueries({ queryKey: ["auth-user"] });
     router.push("/login");
   };
 
-  if (isLoading) {
+  if (isLoading || isRedirecting) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2 text-muted-foreground">

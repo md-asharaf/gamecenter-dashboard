@@ -1,8 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { FolderKanban, Users, Loader2, Activity } from "lucide-react";
-import { api } from "@/lib/api/axios";
 import { motion } from "framer-motion";
 import {
   Area,
@@ -38,25 +36,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/providers/auth-provider";
-
-interface DashboardStats {
-  totalProjects: number;
-  totalAdmins: number | null;
-  projectGrowth: { date: string; total: number }[];
-  projectStats: { projectId: string; projectName: string; questionCount: number }[];
-}
+import { useDashboardStats } from "@/lib/hooks/use-dashboard";
 
 export default function OverviewPage() {
   const { user, isLoading: authLoading } = useAuth();
 
-  const { data: statsData, isLoading: statsLoading } = useQuery<{ data: DashboardStats }>({
-    queryKey: ["dashboardStats"],
-    queryFn: async () => {
-      const res = await api.get("/dashboard/stats");
-      return res.data;
-    },
-    enabled: !!user,
-  });
+  const { data: statsData, isLoading: statsLoading } = useDashboardStats(!!user);
 
   if (authLoading || statsLoading) {
     return (
@@ -226,14 +211,14 @@ export default function OverviewPage() {
                     <Tooltip
                       contentStyle={{ backgroundColor: "rgba(0,0,0,0.8)", border: "none", borderRadius: "8px", color: "white" }}
                       itemStyle={{ color: "hsl(var(--primary))" }}
-                      cursor={{fill: "rgba(255,255,255,0.1)"}}
+                      cursor={{ fill: "rgba(255,255,255,0.1)" }}
                     />
                     <Bar
                       dataKey="questionCount"
                       radius={[4, 4, 0, 0]}
                       name="Questions"
                     >
-                      {stats.projectStats.map((entry, index) => (
+                      {stats.projectStats.map((entry: { projectId: string; projectName: string; questionCount: number }, index: number) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Bar>

@@ -1,5 +1,5 @@
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query'
-import { getQueryClient } from '@/lib/react-query/get-query-client'
+import { getQueryClient } from '@/lib/api/client'
 import { createServerApi } from '@/lib/api/api-server'
 import { FoldersClient } from './folders-client'
 import { Project } from '@/lib/types/project'

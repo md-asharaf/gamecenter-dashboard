@@ -1,49 +1,62 @@
-"use client";
-"use no memo";
-import { AxiosError } from "axios";
-import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
-
-import { useEffect } from "react";
-import { useForm, Controller, useWatch, type Resolver } from "react-hook-form";
+import { useState, useEffect } from "react";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Loader2 } from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AxiosError } from "axios";
+import { Loader2, ChevronsUpDown, Check, X } from "lucide-react";
 import { toast } from "sonner";
+import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
 
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { api } from "@/lib/api/axios";
-import { User, RegisterAdminRequest, UpdateAdminRequest } from "@/lib/types/user";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { User } from "@/lib/types/user";
 import { Project } from "@/lib/types/project";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useInfiniteProjects } from "@/lib/hooks/use-projects";
+import { useCreateAdmin, useUpdateAdmin } from "@/lib/hooks/use-admins";
+import { useDebounce } from "@/hooks/use-debounce";
+import { cn } from "@/lib/utils";
 
-const baseSchema = z.object({
-  email: z.string().email("Invalid email format."),
-  role: z.enum(["SUPER_ADMIN", "SUB_ADMIN"]).default("SUB_ADMIN"),
-  projectIds: z.array(z.string()).default([]),
+const createSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  role: z.enum(["SUPER_ADMIN", "SUB_ADMIN"]),
+  projectIds: z.array(z.string()),
 });
 
-const createSchema = baseSchema.extend({
-  password: z.string().min(6, "Password length must be at least 6 characters."),
-});
-
-const updateSchema = baseSchema.extend({
+const updateSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  role: z.enum(["SUPER_ADMIN", "SUB_ADMIN"]),
+  projectIds: z.array(z.string()),
   password: z.string().optional().or(z.literal("")),
 });
 
 type FormValues = {
   email: string;
-  password: string;
+  password?: string;
   role: "SUPER_ADMIN" | "SUB_ADMIN";
   projectIds: string[];
 };
@@ -56,21 +69,23 @@ interface UserDialogProps {
 
 export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
   const isEditing = !!user;
-  const queryClient = useQueryClient();
 
-  const { data: projectData } = useQuery<{ data: { items: Project[] } }>({
-    queryKey: ["projects"],
-    queryFn: async () => {
-      const res = await api.get("/projects");
-      return res.data;
-    },
-    enabled: open,
-  });
-
-  const projects = projectData?.data?.items || [];
+  const [search, setSearch] = useState("");
+  const [comboboxOpen, setComboboxOpen] = useState(false);
+  const debouncedSearch = useDebounce(search, 300);
+  
+  const { 
+    data: projectsData, 
+    isLoading: projectsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useInfiniteProjects(10, debouncedSearch);
+  
+  const projects = projectsData?.pages.flatMap((page) => page.items) || [];
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(isEditing ? updateSchema : createSchema) as Resolver<FormValues>,
+    resolver: zodResolver(isEditing ? updateSchema : createSchema),
     defaultValues: {
       email: "",
       password: "",
@@ -99,50 +114,43 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
     }
   }, [user, open, form]);
 
-  const mutation = useMutation({
-    mutationFn: async (values: FormValues) => {
-      if (isEditing) {
-        const payload: UpdateAdminRequest = {
-          email: values.email,
-          role: values.role,
-          projectIds: values.projectIds,
-        };
-        if (values.role === "SUPER_ADMIN") {
-          delete payload.projectIds;
-        }
-        if (values.password) {
-          payload.password = values.password;
-        }
-        const res = await api.put(`/admins/${user.id}`, payload);
-        return res.data;
-      } else {
-        const payload: RegisterAdminRequest = {
-          email: values.email,
-          password: values.password,
-          role: values.role,
-          projectIds: values.projectIds,
-        };
-        if (values.role === "SUPER_ADMIN") {
-          delete payload.projectIds;
-        }
-        const res = await api.post("/admins", payload);
-        return res.data;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success(isEditing ? "Sub-admin updated successfully." : "Sub-admin created successfully.");
-      onOpenChange(false);
-    },
-    onError: (error: AxiosError<ApiError>) => {
-      toast.error(isEditing ? "Failed to update sub-admin." : "Failed to create sub-admin.", {
-        description: getApiErrorMessage(error),
-      });
-    },
-  });
+  const createMutation = useCreateAdmin();
+  const updateMutation = useUpdateAdmin(user?.id || "");
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
   const onSubmit = (values: FormValues) => {
-    mutation.mutate(values);
+    const payload = {
+      email: values.email,
+      password: values.password || undefined,
+      role: values.role,
+      projectIds: values.role === "SUPER_ADMIN" ? [] : values.projectIds,
+    };
+
+    if (isEditing) {
+      updateMutation.mutate(payload, {
+        onSuccess: () => {
+          toast.success("Sub-admin updated successfully.");
+          onOpenChange(false);
+        },
+        onError: (error) => {
+          toast.error("Failed to update sub-admin.", {
+            description: getApiErrorMessage(error as AxiosError<ApiError>),
+          });
+        },
+      });
+    } else {
+      createMutation.mutate(payload, {
+        onSuccess: () => {
+          toast.success("Sub-admin created successfully.");
+          onOpenChange(false);
+        },
+        onError: (error) => {
+          toast.error("Failed to create sub-admin.", {
+            description: getApiErrorMessage(error as AxiosError<ApiError>),
+          });
+        },
+      });
+    }
   };
 
   return (
@@ -199,60 +207,113 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
           {role !== "SUPER_ADMIN" && (
             <div className="space-y-2">
               <Label>Project Assignments</Label>
-              <div className="rounded-md border border-zinc-200 dark:border-zinc-800 p-4">
-              <ScrollArea className="h-40">
-                {projects.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No projects available.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {projects.map((project: Project) => (
-                      <Controller
-                        key={project.id}
-                        control={form.control}
-                        name="projectIds"
-                        render={({ field }) => {
-                          const isChecked = field.value?.includes(project.id);
+              <Controller
+                control={form.control}
+                name="projectIds"
+                render={({ field }) => (
+                  <div className="flex flex-col gap-2">
+                    <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                      <PopoverTrigger className={cn(buttonVariants({ variant: "outline" }), "w-full justify-between font-normal")} role="combobox" aria-expanded={comboboxOpen}>
+                        {field.value?.length > 0
+                          ? `${field.value.length} project(s) selected`
+                          : "Select projects..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[375px] p-0" align="start">
+                        <Command shouldFilter={false}>
+                          <CommandInput
+                            placeholder="Search projects..."
+                            value={search}
+                            onValueChange={setSearch}
+                          />
+                          <CommandList
+                            onScroll={(e) => {
+                              const target = e.target as HTMLDivElement;
+                              if (target.scrollHeight - target.scrollTop <= target.clientHeight + 50) {
+                                if (hasNextPage && !isFetchingNextPage) {
+                                  fetchNextPage();
+                                }
+                              }
+                            }}
+                          >
+                            <CommandEmpty>
+                              {projectsLoading ? "Searching..." : "No projects found."}
+                            </CommandEmpty>
+                            <CommandGroup>
+                              {projects.map((project: Project) => {
+                                const isSelected = field.value?.includes(project.id);
+                                return (
+                                  <CommandItem
+                                    key={project.id}
+                                    value={project.id}
+                                    onSelect={() => {
+                                      if (isSelected) {
+                                        field.onChange(
+                                          field.value?.filter((val) => val !== project.id)
+                                        );
+                                      } else {
+                                        field.onChange([...(field.value || []), project.id]);
+                                      }
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        isSelected ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    {project.name}
+                                  </CommandItem>
+                                );
+                              })}
+                              {isFetchingNextPage && (
+                                <div className="p-4 flex items-center justify-center">
+                                  <Loader2 className="h-4 w-4 animate-spin opacity-50" />
+                                </div>
+                              )}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    {field.value?.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {field.value.map((id) => {
+                          const project = projects.find((p: Project) => p.id === id);
                           return (
-                            <div className="flex flex-row items-start space-x-3">
-                              <Checkbox
-                                id={project.id}
-                                checked={isChecked}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    field.onChange([...(field.value || []), project.id]);
-                                  } else {
-                                    field.onChange(
-                                      field.value?.filter((value: string) => value !== project.id)
-                                    );
-                                  }
+                            <Badge key={id} variant="secondary" className="flex items-center gap-1">
+                              {project ? project.name : id}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-4 w-4 rounded-full ml-1 hover:bg-transparent"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  field.onChange(field.value.filter((val) => val !== id));
                                 }}
-                              />
-                              <div className="space-y-1 leading-none">
-                                <Label htmlFor={project.id} className="cursor-pointer font-normal">
-                                  {project.name}
-                                </Label>
-                              </div>
-                            </div>
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </Badge>
                           );
-                        }}
-                      />
-                    ))}
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
-              </ScrollArea>
+              />
+              {form.formState.errors.projectIds && (
+                <p className="text-sm text-red-500">{form.formState.errors.projectIds.message}</p>
+              )}
             </div>
-            {form.formState.errors.projectIds && (
-              <p className="text-sm text-red-500">{form.formState.errors.projectIds.message as string}</p>
-            )}
-          </div>
           )}
 
           <div className="pt-4 flex justify-end space-x-2">
             <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isEditing ? "Save Changes" : "Create"}
             </Button>
           </div>

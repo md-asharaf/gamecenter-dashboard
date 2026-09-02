@@ -4,45 +4,31 @@ import { AxiosError } from "axios";
 import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Settings2, Trash2, Folder as FolderIcon, Eraser, ArrowLeft, Globe } from "lucide-react";
+import { Plus, Globe } from "lucide-react";
 import { toast } from "sonner";
-import Link from "next/link";
-import { ColumnDef } from "@tanstack/react-table";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 import { Button } from "@/components/ui/button";
-import { Project, ApiResponse } from "@/lib/types/project";
-import { Folder, FolderPageResponse } from "@/lib/types/folder";
-import { getFolders, deleteFolder, emptyFolder } from "@/lib/api/folder";
-import { api } from "@/lib/api/axios";
+import { Project } from "@/lib/types/project";
+import { Folder } from "@/lib/types/folder";
+import { useFolders, useDeleteFolder, useEmptyFolder } from "@/lib/hooks/use-folders";
+import { useProject, useUpdateProject } from "@/lib/hooks/use-projects";
 import { ServerDataTable } from "@/components/ui/server-data-table";
 import { FolderDialog } from "./components/folder-dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Loader2 } from "lucide-react";
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+import { useTablePagination } from "@/hooks/use-table-pagination";
+import { getColumns } from "./columns";
 
-export function FoldersClient({ projectId, project: initialProject }: { projectId: string; project: Project | null }) {
-  const queryClient = useQueryClient();
-
-  const { data: projectData } = useQuery<ApiResponse<Project>>({
-    queryKey: ["project", projectId],
-    queryFn: async () => {
-      const res = await api.get<ApiResponse<Project>>(`/projects/${projectId}`);
-      return res.data;
-    },
-    initialData: initialProject ? { success: true as const, data: initialProject } : undefined,
-    staleTime: 0,
-  });
-
-  const project: Project | null = projectData?.data ?? initialProject;
+export function FoldersClient({ projectId, project: initialProject }: { projectId: string; project?: Project | null }) {
+  const { data: projectData } = useProject(projectId, initialProject || undefined);
+  const project = projectData?.data ?? initialProject;
 
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
@@ -50,15 +36,24 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [emptyId, setEmptyId] = useState<string | null>(null);
 
-  const [limit] = useState(10);
-  const [keyHistory, setKeyHistory] = useState<string[]>([]);
-  const currentKey = keyHistory[keyHistory.length - 1];
-  const [search, setSearch] = useState("");
+  const {
+    currentPage,
+    limit,
+    search,
+    sorting,
+    columnVisibility,
+    handleSearch,
+    handleNextPage,
+    handlePrevPage,
+    setLimit,
+    setSorting,
+    setColumnVisibility,
+  } = useTablePagination();
 
-  const { data: pageData, isFetching } = useQuery<FolderPageResponse>({
-    queryKey: ["folders", projectId, limit, currentKey, search],
-    queryFn: () => getFolders(projectId, limit, currentKey, search),
-  });
+  const sortBy = sorting[0]?.id || "createdAt";
+  const sortDir = sorting[0]?.desc ? "desc" : "asc";
+
+  const { data: pageData, isFetching, refetch } = useFolders(projectId, currentPage, limit, search, sortBy, sortDir);
 
   const folders = [...(pageData?.items || [])].sort((a, b) => {
     if (a.id === project?.quizFolderId) return -1;
@@ -66,79 +61,57 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
     return 0;
   });
 
-  const handleNextPage = () => {
-    if (pageData?.lastEvaluatedKey) {
-      setKeyHistory((prev) => [...prev, pageData.lastEvaluatedKey!]);
-    }
+  const deleteMutation = useDeleteFolder(projectId);
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success("Folder deleted successfully.");
+        setDeleteId(null);
+      },
+      onError: (error) => {
+        toast.error("Failed to delete folder.", {
+          description: getApiErrorMessage(error as AxiosError<ApiError>),
+        });
+        setDeleteId(null);
+      },
+    });
   };
 
-  const handlePrevPage = () => {
-    setKeyHistory((prev) => prev.slice(0, -1));
+  const emptyMutation = useEmptyFolder(projectId);
+  const handleEmpty = (id: string) => {
+    emptyMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success("Folder emptied successfully.");
+        setEmptyId(null);
+      },
+      onError: (error) => {
+        toast.error("Failed to empty folder.", {
+          description: getApiErrorMessage(error as AxiosError<ApiError>),
+        });
+        setEmptyId(null);
+      },
+    });
   };
 
-  const handleSearch = (value: string) => {
-    setSearch(value);
-    setKeyHistory([]);
+  const updateProjectMutation = useUpdateProject(projectId);
+  const handleMakeActive = (folderId: string) => {
+    if (!project) return;
+    updateProjectMutation.mutate({
+      name: project.name,
+      numberOfQuestionsInQuiz: project.numberOfQuestionsInQuiz || 10,
+      websiteUrl: project.websiteUrl,
+      quizFolderId: folderId,
+    }, {
+      onSuccess: () => {
+        toast.success("Active quiz folder updated.");
+      },
+      onError: (error) => {
+        toast.error("Failed to update active folder.", {
+          description: getApiErrorMessage(error as AxiosError<ApiError>),
+        });
+      },
+    });
   };
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await deleteFolder(projectId, id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["folders", projectId] });
-      toast.success("Folder deleted successfully.");
-      setDeleteId(null);
-    },
-    onError: (error: AxiosError<ApiError>) => {
-      toast.error("Failed to delete folder.", {
-        description: getApiErrorMessage(error),
-      });
-      setDeleteId(null);
-    },
-  });
-
-  const emptyMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await emptyFolder(projectId, id);
-    },
-    onSuccess: () => {
-      toast.success("Folder emptied successfully.");
-      setEmptyId(null);
-    },
-    onError: (error: AxiosError<ApiError>) => {
-      toast.error("Failed to empty folder.", {
-        description: getApiErrorMessage(error),
-      });
-      setEmptyId(null);
-    },
-  });
-
-  const makeActiveMutation = useMutation({
-    mutationFn: async (folderId: string) => {
-      if (!project) return;
-      const payload = {
-        name: project.name,
-        field1Label: project.field1Label,
-        field2Label: project.field2Label,
-        field3Label: project.field3Label,
-        numberOfQuestionsInQuiz: project.numberOfQuestionsInQuiz || 10,
-        mainQuestionLabel: project.mainQuestionLabel || "field1",
-        quizFolderId: folderId,
-        websiteUrl: project.websiteUrl,
-      };
-      await api.put(`/projects/${project.id}`, payload);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
-      toast.success("Active quiz folder updated.");
-    },
-    onError: (error: AxiosError<ApiError>) => {
-      toast.error("Failed to update active folder.", {
-        description: getApiErrorMessage(error),
-      });
-    },
-  });
 
   const handleEdit = (folder: Folder) => {
     setSelectedFolder(folder);
@@ -150,74 +123,34 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
     setIsFolderDialogOpen(true);
   };
 
-  const columns: ColumnDef<Folder>[] = [
-    {
-      id: "name",
-      header: "Name",
-      cell: ({ row }) => (
-        <div className="flex items-center">
-          <FolderIcon className="mr-2 h-4 w-4 text-blue-500" />
-          <Link href={`/projects/${projectId}/folders/${row.original.id}`} className="hover:underline text-primary font-medium">
-            {row.original.name}
-          </Link>
-          {project?.quizFolderId === row.original.id && (
-            <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-medium">Active</span>
-          )}
-        </div>
-      ),
-    },
-    {
-      id: "createdAt",
-      header: "Created At",
-      cell: ({ row }) => (
-        <span>{new Date(row.original.createdAt).toLocaleString()}</span>
-      ),
-    },
-    {
-      id: "actions",
-      header: () => <div className="text-right">Actions</div>,
-      cell: ({ row }) => {
-        const folder = row.original;
-        const isActive = project?.quizFolderId === folder.id;
-        return (
-          <div className="flex justify-end space-x-2">
-            {!isActive && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => makeActiveMutation.mutate(folder.id)}
-                disabled={makeActiveMutation.isPending}
-              >
-                Make Active
-              </Button>
-            )}
-            <Button variant="outline" size="sm" onClick={() => handleEdit(folder)}>
-              <Settings2 className="h-4 w-4 mr-2" /> Edit
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setEmptyId(folder.id)}>
-              <Eraser className="h-4 w-4 mr-2" /> Empty
-            </Button>
-            <Button variant="destructive" size="sm" onClick={() => setDeleteId(folder.id)}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        );
-      },
-    },
-  ];
+  const columns = getColumns(
+    projectId,
+    project,
+    handleMakeActive,
+    handleEdit,
+    setEmptyId,
+    setDeleteId,
+    updateProjectMutation.isPending
+  );
 
   return (
     <div className="flex flex-col gap-6">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/projects">Projects</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{project?.name || "Project"}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Link href="/projects">
-            <Button variant="outline" size="icon">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-3xl font-bold tracking-tight truncate">{project?.name || "Project"} Folders</h1>
-            <p className="text-muted-foreground mt-1">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-3xl font-bold tracking-tight truncate">{project?.name || "Project"} Folders</h1>
+          <p className="text-muted-foreground mt-1">
               Organize questions into folders. Select an active quiz folder in project settings.
             </p>
             {project?.websiteUrl && (
@@ -233,8 +166,7 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
               </a>
             )}
           </div>
-        </div>
-        <div className="flex w-full sm:w-auto space-x-2">
+        <div className="flex flex-wrap w-full sm:w-auto gap-2 mt-4 sm:mt-0">
           <Button className="flex-1 sm:flex-none" onClick={handleCreate}>
             <Plus className="mr-2 h-4 w-4" /> Create Folder
           </Button>
@@ -249,8 +181,18 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
         searchPlaceholder="Search folders..."
         onNextPage={handleNextPage}
         onPrevPage={handlePrevPage}
-        hasNextPage={!!pageData?.lastEvaluatedKey}
-        hasPrevPage={keyHistory.length > 0}
+        hasNextPage={!pageData?.isLast}
+        hasPrevPage={currentPage > 0}
+        currentPage={currentPage}
+        totalPages={pageData?.totalPages}
+        totalElements={pageData?.totalElements}
+        limit={limit}
+        onLimitChange={setLimit}
+        sorting={sorting}
+        onSortingChange={setSorting}
+        columnVisibility={columnVisibility}
+        onColumnVisibilityChange={setColumnVisibility}
+        onRefresh={refetch}
       />
 
       <FolderDialog
@@ -260,53 +202,26 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
         projectId={projectId}
       />
 
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this folder and ALL questions inside it. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                if (deleteId) deleteMutation.mutate(deleteId);
-              }}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete Folder"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        onConfirm={() => {
+          if (deleteId) handleDelete(deleteId);
+        }}
+        isPending={deleteMutation.isPending}
+        description="This will permanently delete the folder and all its questions."
+      />
 
-      <AlertDialog open={!!emptyId} onOpenChange={() => setEmptyId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete all questions inside this folder. The folder itself will remain. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={emptyMutation.isPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                if (emptyId) emptyMutation.mutate(emptyId);
-              }}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={emptyMutation.isPending}
-            >
-              {emptyMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Empty Folder"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+      <DeleteConfirmDialog
+        open={!!emptyId}
+        onOpenChange={(open) => !open && setEmptyId(null)}
+        onConfirm={() => {
+          if (emptyId) handleEmpty(emptyId);
+        }}
+        isPending={emptyMutation.isPending}
+        title="Empty Folder?"
+        description="This will permanently delete all questions in this folder. The folder itself will remain."
+      />
+    </div >
   );
 }

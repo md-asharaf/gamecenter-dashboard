@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Loader2, UploadCloud, FileDown, Info } from "lucide-react";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
 
@@ -17,7 +16,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { api } from "@/lib/api/axios";
+import { getUploadTemplateUrl, getPresignedUrl, getUploadStatus } from "@/lib/services/upload";
+import { useUploadInstructions } from "@/lib/hooks/use-upload";
 
 interface UploadDialogProps {
   open: boolean;
@@ -33,16 +33,9 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const { data: instructionsData, isLoading: isLoadingInstructions } = useQuery({
-    queryKey: ['uploadInstructions', projectId],
-    queryFn: async () => {
-      const res = await api.get(`/projects/${projectId}/upload-instructions`);
-      return res.data.data as string[];
-    },
-    enabled: open,
-  });
+  const { data: instructionsData, isLoading: isLoadingInstructions } = useUploadInstructions(projectId, open);
 
-  const instructions = instructionsData || [];
+  const instructions = (instructionsData?.data as string[]) || [];
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -73,10 +66,8 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
 
   const handleDownloadTemplate = async () => {
     try {
-      const res = await api.get(`/projects/${projectId}/upload-template`, {
-        responseType: 'blob',
-      });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const blobData = await getUploadTemplateUrl(projectId);
+      const url = window.URL.createObjectURL(new Blob([blobData]));
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', 'upload_template.csv');
@@ -112,8 +103,8 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
         return;
       }
 
-      const res = await api.post(`/projects/${projectId}/folders/${folderId}/uploads/presigned-url?ext=${ext}`);
-      const { url, key: fullS3Key } = res.data.data;
+      const res = await getPresignedUrl(projectId, folderId, ext);
+      const { url, key: fullS3Key } = res.data;
 
       await axios.put(url, currentFile, {
         headers: {
@@ -152,8 +143,8 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
         }
 
         try {
-          const statusRes = await api.get(`/projects/${projectId}/folders/${folderId}/uploads/${fileName}/status`);
-          const job = statusRes.data.data;
+          const statusRes = await getUploadStatus(projectId, folderId, fileName);
+          const job = statusRes.data;
           notFoundCount = 0;
 
           if (job.status === "COMPLETED") {
@@ -239,11 +230,10 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 transition-colors ${
-              isDragging
-                ? "border-primary bg-primary/10"
-                : "border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900"
-            }`}
+            className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 transition-colors ${isDragging
+              ? "border-primary bg-primary/10"
+              : "border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+              }`}
           >
             <UploadCloud className="h-10 w-10 text-muted-foreground mb-4" />
             <div className="space-y-1 text-center">

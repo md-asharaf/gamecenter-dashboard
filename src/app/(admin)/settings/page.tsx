@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2, KeyRound } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { api } from "@/lib/api/axios";
+import { useUpdatePassword } from "@/lib/hooks/use-auth";
 import { useAuth } from "@/providers/auth-provider";
 
 const settingsSchema = z.object({
@@ -43,27 +42,23 @@ export default function SettingsPage() {
     },
   });
 
-  const mutation = useMutation({
-    mutationFn: async (values: FormValues) => {
-      if (!user) throw new Error("Not logged in");
-      const res = await api.put(`/admins/me/password`, {
-        password: values.password,
-      });
-      return res.data;
-    },
-    onSuccess: () => {
-      toast.success("Password updated successfully.");
-      form.reset();
-    },
-    onError: (error: AxiosError<ApiError>) => {
-      toast.error("Password update failed.", {
-        description: getApiErrorMessage(error),
-      });
-    },
-  });
+  const mutation = useUpdatePassword();
 
   const onSubmit = (values: FormValues) => {
-    mutation.mutate(values);
+    mutation.mutate(
+      { password: values.password },
+      {
+        onSuccess: () => {
+          toast.success("Password updated successfully.");
+          form.reset();
+        },
+        onError: (error) => {
+          toast.error("Password update failed.", {
+            description: getApiErrorMessage(error as AxiosError<ApiError>),
+          });
+        },
+      }
+    );
   };
 
   return (

@@ -7,7 +7,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2 } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import {
@@ -21,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Folder } from "@/lib/types/folder";
-import { createFolder, updateFolder } from "@/lib/api/folder";
+import { useCreateFolder, useUpdateFolder } from "@/lib/hooks/use-folders";
 
 interface FolderDialogProps {
   open: boolean;
@@ -32,7 +31,6 @@ interface FolderDialogProps {
 
 export function FolderDialog({ open, onOpenChange, folder, projectId }: FolderDialogProps) {
   const isEditing = !!folder;
-  const queryClient = useQueryClient();
 
   const formSchema = z.object({
     name: z.string().min(1, "Folder name is required").max(100, "Name must be less than 100 characters"),
@@ -59,29 +57,39 @@ export function FolderDialog({ open, onOpenChange, folder, projectId }: FolderDi
     }
   }, [folder, open, form]);
 
-  const mutation = useMutation({
-    mutationFn: async (values: FormValues) => {
-      if (isEditing) {
-        return await updateFolder(projectId, folder.id, values);
-      } else {
-        return await createFolder(projectId, values);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["folders", projectId] });
-      toast.success(isEditing ? "Folder updated successfully." : "Folder created successfully.");
-      onOpenChange(false);
-    },
-    onError: (error: AxiosError<ApiError>) => {
-      toast.error(isEditing ? "Folder update failed." : "Folder creation failed.", {
-        description: getApiErrorMessage(error),
-      });
-    },
-  });
+  const createMutation = useCreateFolder(projectId);
+  const updateMutation = useUpdateFolder(projectId, folder?.id || "");
+
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
   const onSubmit = (values: FormValues) => {
-    mutation.mutate(values);
+    if (isEditing) {
+      updateMutation.mutate(values, {
+        onSuccess: () => {
+          toast.success("Folder updated successfully.");
+          onOpenChange(false);
+        },
+        onError: (error) => {
+          toast.error("Folder update failed.", {
+            description: getApiErrorMessage(error as AxiosError<ApiError>),
+          });
+        },
+      });
+    } else {
+      createMutation.mutate(values, {
+        onSuccess: () => {
+          toast.success("Folder created successfully.");
+          onOpenChange(false);
+        },
+        onError: (error) => {
+          toast.error("Folder creation failed.", {
+            description: getApiErrorMessage(error as AxiosError<ApiError>),
+          });
+        },
+      });
+    }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -100,13 +108,13 @@ export function FolderDialog({ open, onOpenChange, folder, projectId }: FolderDi
               <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
             )}
           </div>
-          
+
           <div className="pt-4 flex justify-end space-x-2">
             <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isEditing ? "Save Changes" : "Create"}
             </Button>
           </div>
