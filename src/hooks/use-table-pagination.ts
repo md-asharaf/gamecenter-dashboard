@@ -3,7 +3,7 @@ import { SortingState, VisibilityState, RowSelectionState } from "@tanstack/reac
 
 export function useTablePagination(initialPage = 0, initialLimit = 10, initialSearch = "") {
   const [currentPage, setCurrentPage] = useState(initialPage);
-  const [limit, setLimit] = useState(initialLimit);
+  const [limit, setLimitState] = useState(initialLimit);
   const [search, setSearch] = useState(initialSearch);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -24,6 +24,11 @@ export function useTablePagination(initialPage = 0, initialLimit = 10, initialSe
 
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
+  }, []);
+
+  const setLimit = useCallback((newLimit: number) => {
+    setLimitState(newLimit);
+    setCurrentPage(0);
   }, []);
 
   return {
