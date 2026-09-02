@@ -38,7 +38,7 @@ export const getColumns = (
       cell: ({ row }) => {
         const projectIds = row.getValue("projectIds") as string[];
         if (row.getValue("role") !== "SUPER_ADMIN" && (!projectIds || projectIds.length === 0)) return <div className="text-right mr-4 text-muted-foreground text-sm">None</div>;
-        return <div className="text-right mr-4">{row.getValue("role") == "SUPER_ADMIN" ? "All" : projectIds.length}</div>;
+        return <div className="text-right mr-4">{row.getValue("role") == "SUPER_ADMIN" ? "All" : projectIds.length} Projects</div>;
       },
     },
     {
