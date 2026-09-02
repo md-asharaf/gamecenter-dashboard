@@ -1,12 +1,28 @@
+import type { PageResponse } from "./pagination";
+
 export interface Question {
   id: string;
   folderId: string;
+  question: string;
+  answer: string;
+  hint?: string;
+  options?: string[];
   createdAt: number;
   updatedAt: number;
-  [key: string]: unknown;
 }
 
-export interface QuestionPageResponse {
-  items: Question[];
-  lastEvaluatedKey: string | null;
+export interface CreateQuestionRequest {
+  question: string;
+  answer: string;
+  hint?: string;
+  options?: string[];
 }
+
+export interface UpdateQuestionRequest {
+  question?: string;
+  answer?: string;
+  hint?: string;
+  options?: string[];
+}
+
+export type QuestionPageResponse = PageResponse<Question>;

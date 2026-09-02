@@ -7,7 +7,7 @@ export interface User {
   updatedAt: number;
 }
 
-export interface RegisterAdminRequest {
+export interface CreateAdminRequest {
   email: string;
   password?: string;
   projectIds?: string[];

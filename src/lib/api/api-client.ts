@@ -59,8 +59,8 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (err) {
         processQueue(err);
-        if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-          window.location.replace("/login");
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("auth-expired"));
         }
         return Promise.reject(err);
       } finally {

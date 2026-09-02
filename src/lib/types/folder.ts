@@ -1,3 +1,5 @@
+import type { PageResponse } from "./pagination";
+
 export interface Folder {
   id: string;
   projectId: string;
@@ -14,7 +16,4 @@ export interface UpdateFolderRequest {
   name: string;
 }
 
-export interface FolderPageResponse {
-  items: Folder[];
-  lastEvaluatedKey?: string;
-}
+export type FolderPageResponse = PageResponse<Folder>;
