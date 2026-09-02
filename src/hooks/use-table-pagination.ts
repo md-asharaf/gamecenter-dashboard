@@ -22,6 +22,10 @@ export function useTablePagination(initialPage = 0, initialLimit = 10, initialSe
     setCurrentPage((p) => (p > 0 ? p - 1 : 0));
   }, []);
 
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+  }, []);
+
   return {
     currentPage,
     limit,
@@ -32,6 +36,7 @@ export function useTablePagination(initialPage = 0, initialLimit = 10, initialSe
     handleSearch,
     handleNextPage,
     handlePrevPage,
+    handlePageChange,
     setCurrentPage,
     setLimit,
     setSearch,

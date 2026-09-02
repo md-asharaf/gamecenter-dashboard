@@ -28,7 +28,7 @@ import { getColumns } from "./columns";
 
 export function FoldersClient({ projectId, project: initialProject }: { projectId: string; project?: Project | null }) {
   const { data: projectData } = useProject(projectId, initialProject || undefined);
-  const project = projectData?.data ?? initialProject;
+  const project = projectData ?? initialProject;
 
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
@@ -45,6 +45,7 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
     handleSearch,
     handleNextPage,
     handlePrevPage,
+    handlePageChange,
     setLimit,
     setSorting,
     setColumnVisibility,
@@ -181,6 +182,7 @@ export function FoldersClient({ projectId, project: initialProject }: { projectI
         searchPlaceholder="Search folders..."
         onNextPage={handleNextPage}
         onPrevPage={handlePrevPage}
+        onPageChange={handlePageChange}
         hasNextPage={!pageData?.isLast}
         hasPrevPage={currentPage > 0}
         currentPage={currentPage}

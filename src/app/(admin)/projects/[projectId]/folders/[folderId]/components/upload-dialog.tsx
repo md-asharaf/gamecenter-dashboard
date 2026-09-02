@@ -35,7 +35,7 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
 
   const { data: instructionsData, isLoading: isLoadingInstructions } = useUploadInstructions(projectId, open);
 
-  const instructions = (instructionsData?.data as string[]) || [];
+  const instructions = (instructionsData as string[]) || [];
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -104,7 +104,7 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
       }
 
       const res = await getPresignedUrl(projectId, folderId, ext);
-      const { url, key: fullS3Key } = res.data;
+      const { url, key: fullS3Key } = res;
 
       await axios.put(url, currentFile, {
         headers: {
@@ -144,17 +144,16 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
 
         try {
           const statusRes = await getUploadStatus(projectId, folderId, fileName);
-          const job = statusRes.data;
+          const job = statusRes;
           notFoundCount = 0;
-
           if (job.status === "COMPLETED") {
-            toast.success(job.errorMessage || "File upload and processing complete. Questions imported.", { id: toastId });
+            toast.success(job.message || "File upload and processing complete. Questions imported.", { id: toastId });
             isDone = true;
             onSuccess?.();
           } else if (job.status === "FAILED") {
             toast.error("Processing failed.", {
               id: toastId,
-              description: job.errorMessage || "An unknown error occurred",
+              description: job.message || "An unknown error occurred",
             });
             isDone = true;
           }

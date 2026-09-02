@@ -81,8 +81,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
     hasNextPage,
     isFetchingNextPage
   } = useInfiniteProjects(10, debouncedSearch);
-  
-  const projects = projectsData?.pages.flatMap((page) => page.items) || [];
+  const projects = projectsData?.pages.flatMap((page) => page?.items || []) || [];
 
   const form = useForm<FormValues>({
     resolver: zodResolver(isEditing ? updateSchema : createSchema),

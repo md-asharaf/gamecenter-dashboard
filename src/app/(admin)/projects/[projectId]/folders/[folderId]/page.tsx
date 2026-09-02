@@ -17,12 +17,12 @@ export default async function QuestionsPage({
     queryKey: ['questions', projectId, folderId],
     queryFn: async () => {
       const res = await api.get(`/projects/${projectId}/folders/${folderId}/questions?page=0&limit=10&sortBy=createdAt&sortDir=desc`)
-      return res.data
+      return res.data.data
     },
   })
 
   const folderRes = await api.get(`/projects/${projectId}/folders/${folderId}`).catch(() => null)
-  const folder = folderRes?.data || null
+  const folder = folderRes?.data?.data || null
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

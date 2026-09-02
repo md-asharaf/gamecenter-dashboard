@@ -37,7 +37,7 @@ interface QuestionsClientProps {
 export function QuestionsClient({ projectId, folderId, folder }: QuestionsClientProps) {
   const queryClient = useQueryClient();
   const { data: projectData } = useProject(projectId);
-  const project = projectData?.data;
+  const project = projectData;
 
   const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
@@ -53,6 +53,7 @@ export function QuestionsClient({ projectId, folderId, folder }: QuestionsClient
     handleSearch,
     handleNextPage,
     handlePrevPage,
+    handlePageChange,
     setLimit,
     setSorting,
     setColumnVisibility,
@@ -161,6 +162,7 @@ export function QuestionsClient({ projectId, folderId, folder }: QuestionsClient
         onSearch={handleSearch}
         onNextPage={handleNextPage}
         onPrevPage={handlePrevPage}
+        onPageChange={handlePageChange}
         hasNextPage={!pageData?.isLast}
         hasPrevPage={currentPage > 0}
         isLoading={isFetching}

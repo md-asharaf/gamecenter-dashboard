@@ -11,7 +11,7 @@ export default async function ProjectsPage() {
     queryKey: ['projects'],
     queryFn: async () => {
       const res = await api.get('/projects')
-      return res.data
+      return res.data.data
     },
   })
 

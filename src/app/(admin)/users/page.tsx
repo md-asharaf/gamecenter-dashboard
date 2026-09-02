@@ -11,7 +11,7 @@ export default async function UsersPage() {
     queryKey: ['admins'],
     queryFn: async () => {
       const res = await api.get('/admins')
-      return res.data
+      return res.data.data
     },
   })
 

@@ -29,7 +29,7 @@ export function useProject(id: string, initialData?: Project) {
   return useQuery({
     queryKey: ["project", id],
     queryFn: () => getProject(id),
-    initialData: initialData ? { success: true, data: initialData } : undefined,
+    initialData: initialData ? initialData : undefined,
     staleTime: 0,
   });
 }
@@ -78,7 +78,7 @@ export function useUpdateProject(id: string) {
             ...oldData,
             pages: oldData.pages.map((page: { items: Project[] }) => ({
               ...page,
-              items: page.items.map((item: Project) =>
+              items: (page.items || []).map((item: Project) =>
                 item.id === id ? { ...item, ...newProject } : item
               ),
             })),

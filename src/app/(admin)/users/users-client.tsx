@@ -31,6 +31,7 @@ export function UsersClient() {
     handleSearch,
     handleNextPage,
     handlePrevPage,
+    handlePageChange,
     setLimit,
     setSorting,
     setColumnVisibility,
@@ -92,6 +93,7 @@ export function UsersClient() {
         onSearch={handleSearch}
         onNextPage={handleNextPage}
         onPrevPage={handlePrevPage}
+        onPageChange={handlePageChange}
         hasNextPage={!pageData?.isLast}
         hasPrevPage={currentPage > 0}
         isLoading={isFetching}

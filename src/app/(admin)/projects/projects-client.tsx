@@ -29,6 +29,7 @@ export function ProjectsClient() {
     handleSearch,
     handleNextPage,
     handlePrevPage,
+    handlePageChange,
     setLimit,
     setSorting,
     setColumnVisibility,
@@ -92,6 +93,7 @@ export function ProjectsClient() {
         onSearch={handleSearch}
         onNextPage={handleNextPage}
         onPrevPage={handlePrevPage}
+        onPageChange={handlePageChange}
         hasNextPage={!data?.isLast}
         hasPrevPage={currentPage > 0}
         isLoading={isFetching}

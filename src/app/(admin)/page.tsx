@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderKanban, Users, Loader2, Activity } from "lucide-react";
+import { FolderKanban, Loader2, Activity, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import {
   Area,
@@ -51,7 +51,7 @@ export default function OverviewPage() {
     );
   }
 
-  const stats = statsData?.data;
+  const stats = statsData;
 
   return (
     <div className="flex flex-col gap-8 pb-10">
@@ -94,12 +94,12 @@ export default function OverviewPage() {
           >
             <Card className="glass-card h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Admins</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Sub-Admins</CardTitle>
+                <ShieldCheck className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats?.totalAdmins}</div>
-                <p className="text-xs text-muted-foreground">Registered platform users</p>
+                <p className="text-xs text-muted-foreground">Active sub-admins</p>
               </CardContent>
             </Card>
           </motion.div>

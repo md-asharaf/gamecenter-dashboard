@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/incompatible-library */
 "use client";
 "use no memo";
 
@@ -23,7 +22,7 @@ import {
 } from "@/components/ui/table";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ChevronDown, RefreshCw, PackageOpen } from "lucide-react";
+import { Search, ChevronDown, RefreshCw, PackageOpen, MoreHorizontal } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebounce } from "@/hooks/use-debounce";
 import {
@@ -39,6 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 interface ServerDataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -64,6 +64,7 @@ interface ServerDataTableProps<TData, TValue> {
   onColumnVisibilityChange?: OnChangeFn<VisibilityState>;
   CustomActions?: React.ReactNode;
   onRefresh?: () => void;
+  onPageChange?: (page: number) => void;
 }
 
 export function ServerDataTable<TData, TValue>({
@@ -90,6 +91,7 @@ export function ServerDataTable<TData, TValue>({
   onColumnVisibilityChange,
   CustomActions,
   onRefresh,
+  onPageChange,
 }: ServerDataTableProps<TData, TValue>) {
   const [searchValue, setSearchValue] = useState("");
   const debouncedSearch = useDebounce(searchValue, 500);
@@ -106,7 +108,7 @@ export function ServerDataTable<TData, TValue>({
   }, [debouncedSearch]);
 
   const table =
-    useReactTable({
+    useReactTable({ // eslint-disable-line react-hooks/incompatible-library
       data,
       columns,
       getCoreRowModel: getCoreRowModel(),
@@ -124,6 +126,47 @@ export function ServerDataTable<TData, TValue>({
     });
 
   const showPageInfo = totalPages !== undefined && currentPage !== undefined;
+
+  const renderPaginationItems = () => {
+    if (totalPages === undefined || currentPage === undefined || !onPageChange) return null;
+
+    const pages: (number | string)[] = [];
+    const current = currentPage + 1;
+    const total = totalPages;
+
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (current <= 4) {
+        pages.push(1, 2, 3, 4, 5, '...', total);
+      } else if (current > total - 4) {
+        pages.push(1, '...', total - 4, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(1, '...', current - 2, current - 1, current, current + 1, current + 2, '...', total);
+      }
+    }
+
+    return pages.map((page, index) => {
+      if (page === '...') {
+        return <span key={`ellipsis-${index}`} className="flex h-8 w-8 items-center justify-center"><MoreHorizontal className="h-4 w-4 text-muted-foreground" /></span>;
+      }
+      const pageNumber = page as number;
+      const isCurrent = pageNumber === current;
+      return (
+        <Button
+          key={pageNumber}
+          variant={isCurrent ? "default" : "outline"}
+          className={`h-8 w-8 p-0 ${isCurrent ? "" : "hidden sm:inline-flex"}`}
+          onClick={() => onPageChange(pageNumber - 1)}
+          disabled={isLoading}
+        >
+          {pageNumber}
+        </Button>
+      );
+    });
+  };
 
   return (
     <div>
@@ -147,7 +190,7 @@ export function ServerDataTable<TData, TValue>({
             </Button>
           )}
           <DropdownMenu>
-            <DropdownMenuTrigger className={buttonVariants({ variant: "outline" }) + " ml-auto"}>
+            <DropdownMenuTrigger className={cn(buttonVariants({ variant: "outline" }), "ml-auto")}>
               Columns <ChevronDown className="ml-2 h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -267,7 +310,7 @@ export function ServerDataTable<TData, TValue>({
             </Select>
           </div>
         )}
-        {showPageInfo && (
+        {showPageInfo && !onPageChange && (
           <div className="flex w-40 items-center justify-center text-sm font-medium">
             Page {(currentPage ?? 0) + 1} of {totalPages ?? 1}
             {totalElements !== undefined && ` (${totalElements} total)`}
@@ -276,15 +319,40 @@ export function ServerDataTable<TData, TValue>({
         <div className="flex items-center space-x-2 ml-auto">
           <Button
             variant="outline"
-            className="h-8 px-4"
+            className="h-8 px-4 hidden sm:inline-flex"
             onClick={() => onPrevPage?.()}
             disabled={!hasPrevPage || isLoading}
           >
             Previous
           </Button>
+
+          {onPageChange && totalPages !== undefined ? (
+            <div className="flex items-center space-x-1">
+              {renderPaginationItems()}
+            </div>
+          ) : null}
+
           <Button
             variant="outline"
-            className="h-8 px-4"
+            className="h-8 px-4 hidden sm:inline-flex"
+            onClick={() => onNextPage?.()}
+            disabled={!hasNextPage || isLoading}
+          >
+            Next
+          </Button>
+
+          {/* Mobile buttons */}
+          <Button
+            variant="outline"
+            className="h-8 px-4 sm:hidden"
+            onClick={() => onPrevPage?.()}
+            disabled={!hasPrevPage || isLoading}
+          >
+            Prev
+          </Button>
+          <Button
+            variant="outline"
+            className="h-8 px-4 sm:hidden"
             onClick={() => onNextPage?.()}
             disabled={!hasNextPage || isLoading}
           >
