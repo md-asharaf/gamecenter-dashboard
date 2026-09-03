@@ -24,6 +24,7 @@ export function getApiErrorMessage(
 }
 
 export function isServerError(error: unknown): boolean {
+  if (!error) return false;
   if (axios.isAxiosError(error)) {
     return !error.response || error.response.status >= 500;
   }
