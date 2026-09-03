@@ -5,7 +5,7 @@ export function useTablePagination(initialPage = 0, initialLimit = 10, initialSe
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [limit, setLimitState] = useState(initialLimit);
   const [search, setSearch] = useState(initialSearch);
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sortingState, setSortingState] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
@@ -31,11 +31,16 @@ export function useTablePagination(initialPage = 0, initialLimit = 10, initialSe
     setCurrentPage(0);
   }, []);
 
+  const setSorting = useCallback((updaterOrValue: SortingState | ((old: SortingState) => SortingState)) => {
+    setSortingState(updaterOrValue);
+    setCurrentPage(0);
+  }, []);
+
   return {
     currentPage,
     limit,
     search,
-    sorting,
+    sorting: sortingState,
     columnVisibility,
     rowSelection,
     handleSearch,

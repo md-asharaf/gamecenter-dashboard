@@ -15,7 +15,7 @@ export const getColumns = (
         return (
           <Button
             variant="ghost"
-            onClick={() => column.toggleSorting(isSorted === "asc")}
+            onClick={() => column.toggleSorting()}
           >
             Email
             {isSorted === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : isSorted === "desc" ? <ArrowDown className="ml-2 h-4 w-4" /> : <ArrowUpDown className="ml-2 h-4 w-4" />}

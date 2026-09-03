@@ -15,7 +15,7 @@ export const getColumns = (
       return (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(isSorted === "asc")}
+          onClick={() => column.toggleSorting()}
         >
           Project Name
           {isSorted === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : isSorted === "desc" ? <ArrowDown className="ml-2 h-4 w-4" /> : <ArrowUpDown className="ml-2 h-4 w-4" />}
@@ -36,7 +36,7 @@ export const getColumns = (
         <div className="flex justify-end">
           <Button
             variant="ghost"
-            onClick={() => column.toggleSorting(isSorted === "asc")}
+            onClick={() => column.toggleSorting()}
           >
             Created At
             {isSorted === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : isSorted === "desc" ? <ArrowDown className="ml-2 h-4 w-4" /> : <ArrowUpDown className="ml-2 h-4 w-4" />}
