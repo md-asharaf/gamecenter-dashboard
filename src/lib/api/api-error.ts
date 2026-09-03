@@ -1,4 +1,4 @@
-import { AxiosError } from "axios";
+import axios, { AxiosError } from "axios";
 
 export interface ApiError {
   success: false;
@@ -20,5 +20,25 @@ export function getApiErrorMessage(
   if (!data) return err.message || fallback;
   if (data.details && data.details.length > 0) return data.details[0];
   if (data.error) return data.error;
+  return fallback;
+}
+
+export function isServerError(error: unknown): boolean {
+  if (axios.isAxiosError(error)) {
+    return !error.response || error.response.status >= 500;
+  }
+  return true;
+}
+
+export function getErrorMessage(
+  error: unknown,
+  fallback = "An unexpected error occurred."
+): string {
+  if (axios.isAxiosError<ApiError>(error)) {
+    return getApiErrorMessage(error, fallback);
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
   return fallback;
 }

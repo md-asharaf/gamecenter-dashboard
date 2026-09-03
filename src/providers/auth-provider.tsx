@@ -5,7 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { User } from "@/lib/types/user";
 import { useGetMe, useLogout } from "@/lib/hooks/use-auth";
-import { Loader2 } from "lucide-react";
+import { Loader2, ServerCrash } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { isServerError, getErrorMessage } from "@/lib/api/api-error";
 
 interface AuthContextType {
   user: User | null;
@@ -24,8 +26,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const { data: userData, isLoading: isAuthLoading } = useGetMe();
-  const user = (userData as User) || null;
+  const { data: userData, isLoading: isAuthLoading, error } = useGetMe();
+  const serverErrorOccurred = isServerError(error);
+  const errorMessage = getErrorMessage(error, "We couldn't reach the server. This could be due to a temporary outage or network issue.");
+  const user = userData || null;
   const logoutMutation = useLogout();
   const isProtectedRoute = pathname !== "/login";
 
@@ -34,22 +38,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (user && !isProtectedRoute) {
       router.replace("/");
-    } else if (!user && isProtectedRoute) {
+    } else if (!user && !serverErrorOccurred && isProtectedRoute) {
       let currentPath = pathname;
       if (typeof window !== 'undefined') {
         currentPath = window.location.pathname + window.location.search;
       }
       const callbackUrl = encodeURIComponent(currentPath);
-      router.replace(`/login?callbackUrl=${callbackUrl}`);
+      router.replace(`/login?callbackUrl=${callbackUrl}&clear_session=true`);
     }
-  }, [user, isAuthLoading, isProtectedRoute, router, pathname]);
+  }, [user, isAuthLoading, serverErrorOccurred, isProtectedRoute, router, pathname]);
 
   useEffect(() => {
     const handleAuthExpired = () => {
       queryClient.setQueryData(["auth-user"], null);
       if (window.location.pathname !== "/login") {
         const callbackUrl = encodeURIComponent(window.location.pathname + window.location.search);
-        router.replace(`/login?callbackUrl=${callbackUrl}`);
+        router.replace(`/login?callbackUrl=${callbackUrl}&clear_session=true`);
+      } else {
+        router.replace(`/login?clear_session=true`);
       }
     };
 
@@ -65,8 +71,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     queryClient.setQueryData(["auth-user"], null);
-    router.replace("/login");
-    
+    router.replace("/login?clear_session=true");
+
     setTimeout(() => {
       queryClient.removeQueries();
     }, 100);
@@ -84,7 +90,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       )}
-      {children}
+      {serverErrorOccurred && !user && isProtectedRoute && (
+        <div className="fixed inset-0 z-[100] flex h-screen w-full items-center justify-center bg-background">
+          <div className="flex flex-col items-center gap-4 text-center p-4">
+            <div className="rounded-full bg-destructive/10 p-3 text-destructive">
+              <ServerCrash className="h-8 w-8" />
+            </div>
+            <h2 className="text-xl font-semibold">Server Connection Error</h2>
+            <p className="text-muted-foreground max-w-md">
+              {errorMessage}
+            </p>
+            <Button onClick={() => window.location.reload()}>Retry Connection</Button>
+          </div>
+        </div>
+      )}
+      {!serverErrorOccurred && children}
     </AuthContext.Provider>
   );
 }

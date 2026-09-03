@@ -5,7 +5,6 @@ export function useGetMe() {
   return useQuery({
     queryKey: ["auth-user"],
     queryFn: getMe,
-    retry: false,
     staleTime: Infinity,
   });
 }
