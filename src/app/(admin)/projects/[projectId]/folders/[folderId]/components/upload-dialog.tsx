@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Loader2, UploadCloud, FileDown, Info } from "lucide-react";
 import { toast } from "sonner";
 import axios, { AxiosError } from "axios";
-import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
+import { ApiError, getErrorMessage } from "@/lib/api/api-error";
 
 import {
   Dialog,
@@ -182,7 +182,7 @@ export function UploadDialog({ open, onOpenChange, projectId, folderId, onSucces
       const axiosErr = error as AxiosError<ApiError>;
       toast.error("File upload failed.", {
         id: toastId,
-        description: getApiErrorMessage(axiosErr),
+        description: getErrorMessage(axiosErr),
       });
     }
   };

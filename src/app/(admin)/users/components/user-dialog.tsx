@@ -2,10 +2,9 @@ import { useState, useEffect } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { AxiosError } from "axios";
 import { Loader2, ChevronsUpDown, Check, X } from "lucide-react";
 import { toast } from "sonner";
-import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
+import { getErrorMessage } from "@/lib/api/api-error";
 
 import {
   Dialog,
@@ -133,7 +132,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
         },
         onError: (error) => {
           toast.error("Failed to update admin.", {
-            description: getApiErrorMessage(error as AxiosError<ApiError>),
+            description: getErrorMessage(error),
           });
         },
       });
@@ -145,7 +144,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
         },
         onError: (error) => {
           toast.error("Failed to create admin.", {
-            description: getApiErrorMessage(error as AxiosError<ApiError>),
+            description: getErrorMessage(error),
           });
         },
       });

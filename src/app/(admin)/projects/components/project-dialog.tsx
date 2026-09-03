@@ -1,8 +1,7 @@
 "use client";
 "use no memo";
 
-import { AxiosError } from "axios";
-import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
+import { getErrorMessage } from "@/lib/api/api-error";
 
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -86,7 +85,7 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
         },
         onError: (error) => {
           toast.error("Project update failed.", {
-            description: getApiErrorMessage(error as AxiosError<ApiError>),
+            description: getErrorMessage(error),
           });
         },
       });
@@ -98,7 +97,7 @@ export function ProjectDialog({ open, onOpenChange, project }: ProjectDialogProp
         },
         onError: (error) => {
           toast.error("Project creation failed.", {
-            description: getApiErrorMessage(error as AxiosError<ApiError>),
+            description: getErrorMessage(error),
           });
         },
       });

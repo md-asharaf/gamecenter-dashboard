@@ -1,6 +1,5 @@
 "use client";
-import { AxiosError } from "axios";
-import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
+import { getErrorMessage } from "@/lib/api/api-error";
 
 import { useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
@@ -20,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateQuestion, useUpdateQuestion } from "@/lib/hooks/use-questions";
-import { Question, CreateQuestionRequest } from "@/lib/types/question";
+import { Question } from "@/lib/types/question";
 
 const formSchema = z.object({
   question: z.string().min(1, "Question is required"),
@@ -90,7 +89,7 @@ export function QuestionDialog({ open, onOpenChange, question, projectId, folder
         },
         onError: (error) => {
           toast.error("Question update failed.", {
-            description: getApiErrorMessage(error as AxiosError<ApiError>),
+            description: getErrorMessage(error),
           });
         },
       });
@@ -102,7 +101,7 @@ export function QuestionDialog({ open, onOpenChange, question, projectId, folder
         },
         onError: (error) => {
           toast.error("Question creation failed.", {
-            description: getApiErrorMessage(error as AxiosError<ApiError>),
+            description: getErrorMessage(error),
           });
         },
       });

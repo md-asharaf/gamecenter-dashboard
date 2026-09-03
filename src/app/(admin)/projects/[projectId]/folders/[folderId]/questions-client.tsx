@@ -22,8 +22,7 @@ import { ServerDataTable } from "@/components/ui/server-data-table";
 import { useTablePagination } from "@/hooks/use-table-pagination";
 import { getColumns } from "./columns";
 
-import { AxiosError } from "axios";
-import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
+import { getErrorMessage } from "@/lib/api/api-error";
 import { useQueryClient } from "@tanstack/react-query";
 import { useProject } from "@/lib/hooks/use-projects";
 import { useFolder } from "@/lib/hooks/use-folders";
@@ -74,7 +73,7 @@ export function QuestionsClient({ projectId, folderId }: QuestionsClientProps) {
       },
       onError: (error) => {
         toast.error("Question deletion failed.", {
-          description: getApiErrorMessage(error as AxiosError<ApiError>),
+          description: getErrorMessage(error),
         });
         setDeleteId(null);
       },
@@ -90,7 +89,7 @@ export function QuestionsClient({ projectId, folderId }: QuestionsClientProps) {
       },
       onError: (error) => {
         toast.error("Failed to delete selected questions.", {
-          description: getApiErrorMessage(error as AxiosError<ApiError>),
+          description: getErrorMessage(error),
         });
       },
     });

@@ -55,8 +55,8 @@ api.interceptors.response.use(
             originalRequest._retry = true;
             try {
               return await api(originalRequest);
-            } catch (retryErr: any) {
-              if (retryErr.response?.status === 401) {
+            } catch (retryErr) {
+              if (axios.isAxiosError(retryErr) && retryErr.response?.status === 401) {
                 if (typeof window !== "undefined") {
                   window.dispatchEvent(new Event("auth-expired"));
                 }
@@ -84,8 +84,8 @@ api.interceptors.response.use(
       isRefreshing = false;
       try {
         return await api(originalRequest);
-      } catch (retryErr: any) {
-        if (retryErr.response?.status === 401) {
+      } catch (retryErr) {
+        if (axios.isAxiosError(retryErr) && retryErr.response?.status === 401) {
           if (typeof window !== "undefined") {
             window.dispatchEvent(new Event("auth-expired"));
           }

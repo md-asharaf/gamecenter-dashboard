@@ -1,14 +1,10 @@
 "use client";
-import { AxiosError } from "axios";
-import { ApiError } from "@/lib/api/api-error";
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { Loader2, Gamepad2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
 import { Suspense } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -22,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useLogin } from "@/lib/hooks/use-auth";
+import { getErrorMessage } from "@/lib/api/api-error";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -44,20 +41,16 @@ function LoginForm() {
   const loginMutation = useLogin();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const queryClient = useQueryClient();
 
   const onSubmit = async (values: LoginFormValues) => {
     try {
       await loginMutation.mutateAsync(values);
-      await queryClient.refetchQueries({ queryKey: ["auth-user"] });
       toast.success("Welcome back!", { description: "Login successful." });
-      
+
       const callbackUrl = searchParams.get("callbackUrl") || "/projects";
       router.push(callbackUrl);
     } catch (error) {
-      const axiosError = error as AxiosError<ApiError>;
-      const message = axiosError.response?.data?.error || "Invalid email or password.";
-      toast.error("Login failed.", { description: message });
+      toast.error("Login failed.", { description: getErrorMessage(error, "Invalid email or password.") });
     }
   };
 

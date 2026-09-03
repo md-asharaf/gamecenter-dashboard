@@ -2,8 +2,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
-import { AxiosError } from "axios";
-import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
+import { getErrorMessage } from "@/lib/api/api-error";
 
 import { Button } from "@/components/ui/button";
 import { Project } from "@/lib/types/project";
@@ -50,7 +49,7 @@ export function ProjectsClient() {
         },
         onError: (error) => {
           toast.error("Failed to delete project.", {
-            description: getApiErrorMessage(error as AxiosError<ApiError>),
+            description: getErrorMessage(error),
           });
           setDeleteId(null);
         },

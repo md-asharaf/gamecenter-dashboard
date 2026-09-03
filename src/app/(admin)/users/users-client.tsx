@@ -1,6 +1,5 @@
 "use client";
-import { AxiosError } from "axios";
-import { getApiErrorMessage, ApiError } from "@/lib/api/api-error";
+import { getErrorMessage } from "@/lib/api/api-error";
 
 import { useState } from "react";
 import { useAdmins, useDeleteAdmin } from "@/lib/hooks/use-admins";
@@ -51,7 +50,7 @@ export function UsersClient() {
       },
       onError: (error) => {
         toast.error("Failed to delete admin.", {
-          description: getApiErrorMessage(error as AxiosError<ApiError>),
+          description: getErrorMessage(error),
         });
         setDeleteId(null);
       },

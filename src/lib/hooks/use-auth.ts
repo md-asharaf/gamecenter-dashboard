@@ -13,8 +13,8 @@ export function useLogin() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: login,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["auth-user"] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ["auth-user"] });
     },
   });
 }
