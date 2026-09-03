@@ -14,6 +14,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Folder } from "@/lib/types/folder";
@@ -137,7 +138,7 @@ export function FoldersClient({ projectId }: { projectId: string }) {
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink href="/projects">Projects</BreadcrumbLink>
+            <BreadcrumbLink render={<Link href="/projects" />}>Projects</BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>

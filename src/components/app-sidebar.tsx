@@ -92,10 +92,12 @@ export function AppSidebar() {
                 const isActive = item.exact ? pathname === item.url : pathname.startsWith(item.url);
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton isActive={isActive} tooltip={item.title} render={<Link href={item.url} />}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </SidebarMenuButton>
+                    <Link href={item.url} className="w-full block">
+                      <SidebarMenuButton isActive={isActive} tooltip={item.title} render={<span />}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </SidebarMenuButton>
+                    </Link>
                   </SidebarMenuItem>
                 );
               })}

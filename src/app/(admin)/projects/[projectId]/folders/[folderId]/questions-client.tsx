@@ -12,6 +12,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 import { Question } from "@/lib/types/question";
@@ -114,11 +115,11 @@ export function QuestionsClient({ projectId, folderId }: QuestionsClientProps) {
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink href="/projects">Projects</BreadcrumbLink>
+            <BreadcrumbLink render={<Link href="/projects" />}>Projects</BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href={`/projects/${projectId}`}>
+            <BreadcrumbLink render={<Link href={`/projects/${projectId}`} />}>
               {project?.name || "Project"}
             </BreadcrumbLink>
           </BreadcrumbItem>
