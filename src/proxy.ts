@@ -3,9 +3,11 @@ import type { NextRequest } from "next/server";
 
 export function proxy(request: NextRequest) {
   const token = request.cookies.get("admin_token")?.value;
+  const refreshToken = request.cookies.get("refresh_token")?.value;
+
   const isLoginPage = request.nextUrl.pathname === "/login";
 
-  if (!token && !isLoginPage) {
+  if (!token && !refreshToken && !isLoginPage) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

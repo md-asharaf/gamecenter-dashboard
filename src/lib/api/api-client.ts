@@ -31,7 +31,7 @@ const processQueue = (error: unknown) => {
   failedQueue = [];
 };
 
-const SKIP_REFRESH_URLS = ["/auth/login", "/auth/refresh"];
+const SKIP_REFRESH_URLS = ["/auth/login", "/auth/refresh", "/auth/logout"];
 
 api.interceptors.response.use(
   (response) => {
@@ -51,8 +51,19 @@ api.interceptors.response.use(
         return new Promise(function (resolve, reject) {
           failedQueue.push({ resolve, reject });
         })
-          .then(() => api(originalRequest))
-          .catch((err) => Promise.reject(err));
+          .then(async () => {
+            originalRequest._retry = true;
+            try {
+              return await api(originalRequest);
+            } catch (retryErr: any) {
+              if (retryErr.response?.status === 401) {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new Event("auth-expired"));
+                }
+              }
+              return Promise.reject(retryErr);
+            }
+          })
       }
 
       originalRequest._retry = true;
@@ -60,16 +71,26 @@ api.interceptors.response.use(
 
       try {
         await refreshClient.post("/auth/refresh");
-        processQueue(null);
-        return api(originalRequest);
       } catch (err) {
         processQueue(err);
         if (typeof window !== "undefined") {
           window.dispatchEvent(new Event("auth-expired"));
         }
-        return Promise.reject(err);
-      } finally {
         isRefreshing = false;
+        return Promise.reject(err);
+      }
+
+      processQueue(null);
+      isRefreshing = false;
+      try {
+        return await api(originalRequest);
+      } catch (retryErr: any) {
+        if (retryErr.response?.status === 401) {
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new Event("auth-expired"));
+          }
+        }
+        return Promise.reject(retryErr);
       }
     }
 

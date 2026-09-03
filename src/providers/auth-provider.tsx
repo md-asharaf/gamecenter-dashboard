@@ -35,21 +35,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user && !isProtectedRoute) {
       router.replace("/");
     } else if (!user && isProtectedRoute) {
-      router.replace("/login");
+      let currentPath = pathname;
+      if (typeof window !== 'undefined') {
+        currentPath = window.location.pathname + window.location.search;
+      }
+      const callbackUrl = encodeURIComponent(currentPath);
+      router.replace(`/login?callbackUrl=${callbackUrl}`);
     }
-  }, [user, isAuthLoading, isProtectedRoute, router]);
+  }, [user, isAuthLoading, isProtectedRoute, router, pathname]);
 
   useEffect(() => {
     const handleAuthExpired = () => {
       queryClient.setQueryData(["auth-user"], null);
-      if (pathname !== "/login") {
-        router.replace("/login");
+      if (window.location.pathname !== "/login") {
+        const callbackUrl = encodeURIComponent(window.location.pathname + window.location.search);
+        router.replace(`/login?callbackUrl=${callbackUrl}`);
       }
     };
 
     window.addEventListener("auth-expired", handleAuthExpired);
     return () => window.removeEventListener("auth-expired", handleAuthExpired);
-  }, [pathname, queryClient, router]);
+  }, [queryClient, router]);
 
   const logout = async () => {
     try {
@@ -58,9 +64,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Logout failed on backend", e);
     }
 
-    queryClient.clear();
     queryClient.setQueryData(["auth-user"], null);
     router.replace("/login");
+    
+    setTimeout(() => {
+      queryClient.removeQueries();
+    }, 100);
   };
 
   return (
@@ -69,7 +78,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         <div className="fixed inset-0 z-[100] flex h-screen w-full items-center justify-center bg-background">
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
             <Loader2 className="h-8 w-8 animate-spin" />
-            <p className="text-sm">Authenticating...</p>
+            <p className="text-sm">
+              {logoutMutation.isPending ? "Logging out..." : "Please wait..."}
+            </p>
           </div>
         </div>
       )}

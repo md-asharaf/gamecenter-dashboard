@@ -7,6 +7,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { Loader2, Gamepad2 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { Suspense } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +32,7 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+function LoginForm() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -39,19 +42,23 @@ export default function LoginPage() {
   });
 
   const loginMutation = useLogin();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
 
-  const onSubmit = (values: LoginFormValues) => {
-    loginMutation.mutate(values, {
-      onSuccess: () => {
-        toast.success("Welcome back!", { description: "Login successful." });
-        window.location.href = "/projects";
-      },
-      onError: (error: Error) => {
-        const axiosError = error as AxiosError<ApiError>;
-        const message = axiosError.response?.data?.error || "Invalid email or password.";
-        toast.error("Login failed.", { description: message });
-      },
-    });
+  const onSubmit = async (values: LoginFormValues) => {
+    try {
+      await loginMutation.mutateAsync(values);
+      await queryClient.refetchQueries({ queryKey: ["auth-user"] });
+      toast.success("Welcome back!", { description: "Login successful." });
+      
+      const callbackUrl = searchParams.get("callbackUrl") || "/projects";
+      router.push(callbackUrl);
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiError>;
+      const message = axiosError.response?.data?.error || "Invalid email or password.";
+      toast.error("Login failed.", { description: message });
+    }
   };
 
   return (
@@ -133,5 +140,17 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }
