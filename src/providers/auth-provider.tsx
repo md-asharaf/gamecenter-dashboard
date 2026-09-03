@@ -37,7 +37,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (isAuthLoading) return;
 
     if (user && !isProtectedRoute) {
-      router.replace("/");
+      let callback = "/";
+      if (typeof window !== 'undefined') {
+        const searchParams = new URLSearchParams(window.location.search);
+        callback = searchParams.get("callbackUrl") || "/";
+      }
+      router.replace(callback);
     } else if (!user && !serverErrorOccurred && isProtectedRoute) {
       let currentPath = pathname;
       if (typeof window !== 'undefined') {
@@ -104,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       )}
-      {!serverErrorOccurred && children}
+      {!serverErrorOccurred && (user || !isProtectedRoute) && children}
     </AuthContext.Provider>
   );
 }
